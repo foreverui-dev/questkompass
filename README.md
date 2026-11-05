@@ -30,6 +30,5 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 - Questdaten neu erzeugen (mindestens alle 30 Tage):
   `BLIZZARD_CLIENT_ID=… BLIZZARD_CLIENT_SECRET=… node scripts/questdaten.mjs` schreibt `Daten/Quests.lua`.
 - Testlauf ohne Spiel: `lua5.1 tests/simulation.lua`
-- Release: Tag `vX.Y.Z` pushen, der Workflow baut das Paket und lädt es zu CurseForge und Wago hoch.
 
 Questdaten: Blizzard Entertainment, Battle.net Game Data API.
