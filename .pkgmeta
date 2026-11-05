@@ -1,0 +1,7 @@
+package-as: Questkompass
+
+ignore:
+  - tests
+  - scripts
+  - README.md
+  - .github
