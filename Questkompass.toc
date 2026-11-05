@@ -9,6 +9,7 @@
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
 ## X-Website: https://foreverui.de/addons/questkompass/
 ## X-Category: Quests
+## X-Curse-Project-ID: 1785214
 
 Core.lua
 Daten\Quests.lua
