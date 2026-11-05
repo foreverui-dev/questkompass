@@ -1,5 +1,32 @@
 # Questkompass
 
+## 0.5.0
+
+20 neue Funktionen:
+
+1. Gamepad und Pfeiltasten: Questbuch und Assistent lassen sich komplett mit Steuerkreuz, A, B und Schultertasten bedienen; neues Tastenkürzel „Fokus auf die vorige Quest“
+2. Englische Oberfläche, automatisch nach Spielsprache oder fest per `/qk sprache de | en | auto`; englische Befehle wie `/qk settings` oder `/qk wp`
+3. Mouseover-Modus: die Liste erscheint nur bei Maus oder wenn sich etwas ändert
+4. Instanz-Modus und „im Kampf nur Fokus“
+5. Route planen: kürzeste Reihenfolge durch alle Quests der Karte, der Fokuspfeil führt Station für Station (`/qk route`, Tastenkürzel, Rechtsklickmenü)
+6. Eigene Wegpunkte mit `/qk weg 45 60 Name` oder Alt+Klick auf die Weltkarte; auch Wegpunkte des Spiels werden übernommen
+7. Pfeil am Rand der Minikarte, wenn der Fokus außerhalb liegt
+8. Abgabe-Erinnerung, wenn eine fertige Quest in der Nähe abgegeben werden kann
+9. Stufenplaner im neuen Reiter „Planer“: EP, Quests und Spielzeit bis zur Wunschstufe
+10. Questvorschläge: offene Quests in deiner Gegend
+11. Ruf-Übersicht: was deine Quests je Fraktion bringen
+12. Goldvorschau neben der Erfahrungsvorschau
+13. Belohnungs-Vergleich: „besser +5“ an Belohnungen mit höherer Gegenstandsstufe als deine Ausrüstung
+14. Tägliche Quests mit Countdown bis zum Zurücksetzen, in der Liste und im Planer
+15. Twink-Hilfe: kontoweit sehen, welche Quests deine anderen Charaktere erledigt haben (`/qk twinks`)
+16. Gruppen-Abgleich: Fortschritt der Mitspieler direkt unter der Quest, z. B. „Kumpel 3/8“
+17. Gruppensuche: fertige Suchnachricht für Elite- und Gruppenquests
+18. Meilensteine im neuen Reiter „Erfolge“ mit Meldung bei neuen Abzeichen
+19. Notizen je Quest in Liste und Tooltip (`/qk notiz`)
+20. Questlog aufräumen: graue, gescheiterte und lange liegende Quests, Abbrechen nur mit Rückfrage
+
+Außerdem: neue Assistent-Seite „Noch mehr“ für alle neuen Schalter, Sprachwahl auf der Seite „Profil und Tasten“, breiteres Questbuch mit sechs Reitern.
+
 ## 0.4.0 – Barrierefreiheit
 
 - Neue Seite „Barrierefreiheit“ gleich zu Beginn des Einrichtungsassistenten

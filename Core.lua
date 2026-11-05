@@ -1,6 +1,7 @@
 -- Questkompass: Grundgerüst, Einstellungen, Fehlerprotokoll, Ereignisse und Befehle.
 local ADDON, QK = ...
 _G.Questkompass = QK
+local L = QK.L
 
 local metadaten = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 QK.version = (metadaten and metadaten(ADDON, "Version")) or "dev"
@@ -59,16 +60,31 @@ QK.STANDARD = {
   farbenblind = false,
   allesGroesser = false,    -- Fenster, Pfeil und Meldungen um 25 % größer
   wenigerBewegung = false,
+  -- 0.5
+  mouseover = false,        -- Liste nur bei Maus oder Änderung sichtbar
+  instanzModus = true,      -- in Dungeons nur passende Quests
+  kampfNurFokus = false,    -- im Kampf nur die Fokus-Quest
+  minimapPfeil = true,      -- Pfeil am Minikartenrand
+  abgabeErinnerung = true,
+  goldVorschau = true,
+  belohnungsVergleich = true,
+  taeglichZeile = true,
+  gruppenAbgleich = true,
+  notizenZeigen = true,
+  zielStufe = nil,          -- Stufenplaner
+  erfolgMeldungen = true,   -- Meldung bei neuem Meilenstein
+  twinks = true,            -- Twink-Hilfe in Tooltip und Questbuch
+  sprache = "auto",         -- auto | de | en
 }
 
 -- Seite, mit der das Einstellungsfenster öffnet (1 = Willkommen, 2 = Barrierefreiheit)
 QK.SEITE_EINSTELLUNGEN = 3
 
 QK.AKZENTE = {
-  gold    = { "Gold", 0.95, 0.77, 0.35 },
-  klasse  = { "Klassenfarbe" },
+  gold    = { L"Gold", 0.95, 0.77, 0.35 },
+  klasse  = { L"Klassenfarbe" },
   eis     = { "Eis", 0.45, 0.78, 0.98 },
-  smaragd = { "Smaragd", 0.40, 0.85, 0.55 },
+  smaragd = { L"Smaragd", 0.40, 0.85, 0.55 },
 }
 
 -- Ändert die Akzentfarbe an Ort und Stelle, damit alle Verweise auf QK.farben.gold mitziehen.
@@ -170,28 +186,28 @@ function QK:FokusVorlesen()
   local q
   for _, x in ipairs(quests) do if x.id == id then q = x end end
   q = q or quests[1]
-  if not q then self:Sprechen("Keine Quests im Log.", true) return end
+  if not q then self:Sprechen(L"Keine Quests im Log.", true) return end
   local teile = { q.titel }
   if q.fertig then
-    teile[#teile + 1] = "Bereit zum Abgeben."
+    teile[#teile + 1] = L"Bereit zum Abgeben."
   else
     for _, z in ipairs(q.ziele) do
       if not z.fertig then
-        teile[#teile + 1] = z.ist and z.soll and ("%s: %d von %d."):format(z.text, z.ist, z.soll) or (z.text .. ".")
+        teile[#teile + 1] = z.ist and z.soll and (L"%s: %d von %d."):format(z.text, z.ist, z.soll) or (z.text .. ".")
       end
     end
   end
   local d = self.Kompass and self.Kompass:Entfernung(q.id)
-  if d then teile[#teile + 1] = "Entfernung " .. self:EntfernungText(d):gsub(" m$", " Meter"):gsub(" km$", " Kilometer") .. "." end
+  if d then teile[#teile + 1] = L"Entfernung " .. self:EntfernungText(d):gsub(" m$", L" Meter"):gsub(" km$", L" Kilometer") .. "." end
   if not self:Sprechen(table.concat(teile, " "), true) then
-    self:Meldung("die Sprachausgabe ist nicht verfügbar. In den Spieleinstellungen unter Barrierefreiheit › Text-zu-Sprache lässt sie sich einrichten.")
+    self:Meldung(L"die Sprachausgabe ist nicht verfügbar. In den Spieleinstellungen unter Barrierefreiheit › Text-zu-Sprache lässt sie sich einrichten.")
   end
 end
 
 QK.STILE = {
-  ruhig     = { name = "Ruhig",     hintergrund = 0.55, balken = true,  schrift = "normal", nurNaechstes = false, anzahl = 8 },
-  klassisch = { name = "Klassisch", hintergrund = 0,    balken = false, schrift = "gross",  nurNaechstes = false, anzahl = 10 },
-  kompakt   = { name = "Kompakt",   hintergrund = 0.35, balken = true,  schrift = "klein",  nurNaechstes = true,  anzahl = 12 },
+  ruhig     = { name = L"Ruhig",     hintergrund = 0.55, balken = true,  schrift = "normal", nurNaechstes = false, anzahl = 8 },
+  klassisch = { name = L"Klassisch", hintergrund = 0,    balken = false, schrift = "gross",  nurNaechstes = false, anzahl = 10 },
+  kompakt   = { name = L"Kompakt",   hintergrund = 0.35, balken = true,  schrift = "klein",  nurNaechstes = true,  anzahl = 12 },
 }
 
 local function kopie(v)
@@ -213,7 +229,7 @@ function QK:Stil()
 end
 
 function QK:Meldung(text, ...)
-  DEFAULT_CHAT_FRAME:AddMessage(QK.gold .. "Questkompass:|r " .. (select("#", ...) > 0 and text:format(...) or text))
+  DEFAULT_CHAT_FRAME:AddMessage(QK.gold .. L"Questkompass:|r " .. (select("#", ...) > 0 and text:format(...) or text))
 end
 
 ---------------------------------------------------------------------------
@@ -234,7 +250,7 @@ function QK:Sicher(name, fn, ...)
     end
     if not gemeldet then
       gemeldet = true
-      QK:Meldung("|cffe05a4dEin Fehler ist aufgetreten (%s).|r /qk fehler zeigt Details.", name)
+      QK:Meldung(L"|cffe05a4dEin Fehler ist aufgetreten (%s).|r /qk fehler zeigt Details.", name)
     end
   end
   return ok
@@ -264,6 +280,23 @@ function QK:Modul(name)
   self.module[#self.module + 1] = m
   QK[name] = m
   return m
+end
+
+-- Haken: Module hängen sich an Stellen anderer Module, z. B. Zusatzzeilen in der Liste.
+-- QK:Rufe(name, ...) ruft alle Funktionen auf und sammelt ihre Ergebnisse.
+local haken = {}
+function QK:Haken(name, fn)
+  haken[name] = haken[name] or {}
+  table.insert(haken[name], fn)
+end
+function QK:Rufe(name, ...)
+  local ergebnisse = {}
+  for _, fn in ipairs(haken[name] or {}) do
+    local ok, a = pcall(fn, ...)
+    if ok and a ~= nil then ergebnisse[#ergebnisse + 1] = a
+    elseif not ok then QK:Sicher(name, error, a, 0) end
+  end
+  return ergebnisse
 end
 
 -- Alle Module neu zeichnen (nach Änderungen in Assistent oder Einstellungen).
@@ -314,9 +347,15 @@ QK:Ereignis("ADDON_LOADED", function(name)
   QuestkompassCharDB.ausgeblendet = QuestkompassCharDB.ausgeblendet or {}
   QuestkompassCharDB.zugeklappt = QuestkompassCharDB.zugeklappt or {}
   QuestkompassCharDB.tagebuch = QuestkompassCharDB.tagebuch or {}
+  QuestkompassCharDB.notizen = QuestkompassCharDB.notizen or {}
+  QuestkompassCharDB.angenommen = QuestkompassCharDB.angenommen or {}
+  QuestkompassCharDB.erfolge = QuestkompassCharDB.erfolge or {}
+  root.charaktere = root.charaktere or {}
+  root.epTabelle = root.epTabelle or {}
   QK.root = root
   QK.char = QuestkompassCharDB
   QK:ProfilLaden()
+  QK:SpracheAnwenden()
 end)
 
 QK:Ereignis("PLAYER_LOGIN", function()
@@ -333,6 +372,13 @@ end)
 -- Questdaten aus der Blizzard-API (Daten/Quests.lua)
 ---------------------------------------------------------------------------
 local englisch = GetLocale() ~= "deDE"
+
+-- Sprache: „auto“ folgt dem Spiel, „de“ und „en“ erzwingen eine Sprache (ganz erst nach /reload).
+function QK:SpracheAnwenden()
+  local s = self.db and self.db.sprache
+  if s == "de" then englisch = false elseif s == "en" then englisch = true else englisch = GetLocale() ~= "deDE" end
+  self.englischUI = englisch
+end
 
 local function lokal(paar)
   if not paar then return nil end
@@ -459,21 +505,41 @@ function QK:EntfernungText(yards)
   return ("%d m"):format(math.floor(m + 0.5))
 end
 
+-- Geld in Kupfer als Text mit Münzsymbolen
+function QK:GeldText(kupfer)
+  kupfer = math.floor(kupfer or 0)
+  local g, si, k = math.floor(kupfer / 10000), math.floor(kupfer / 100) % 100, kupfer % 100
+  local t = {}
+  if g > 0 then t[#t + 1] = g .. "|TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0|t" end
+  if si > 0 then t[#t + 1] = si .. "|TInterface\\MoneyFrame\\UI-SilverIcon:0:0:2:0|t" end
+  if k > 0 or #t == 0 then t[#t + 1] = k .. "|TInterface\\MoneyFrame\\UI-CopperIcon:0:0:2:0|t" end
+  return table.concat(t, " ")
+end
+
 ---------------------------------------------------------------------------
 -- Befehle
 ---------------------------------------------------------------------------
 local HILFE = {
-  "/qk – Zielliste ein- oder ausblenden",
-  "/qk einstellungen – alle Einstellungen",
-  "/qk einrichten – Einrichtungsassistent erneut starten",
-  "/qk gebiet [Name] – Gebietsfortschritt",
-  "/qk buch | welt | suche [Text] | tagebuch – Questbuch",
-  "/qk naechste – nächstgelegene Quest als Fokus",
-  "/qk vorlesen – Fokus-Quest vorlesen lassen",
-  "/qk fokus – Fokus-Quest aufheben",
-  "/qk einblenden – ausgeblendete Quests wieder zeigen",
-  "/qk zuruecksetzen – alles auf Anfang",
-  "/qk diagnose | fehler – technische Infos für Fehlerberichte",
+  L"/qk – Zielliste ein- oder ausblenden",
+  L"/qk einstellungen – alle Einstellungen",
+  L"/qk einrichten – Einrichtungsassistent erneut starten",
+  L"/qk gebiet [Name] – Gebietsfortschritt",
+  L"/qk buch | welt | suche [Text] | tagebuch – Questbuch",
+  L"/qk naechste – nächstgelegene Quest als Fokus",
+  L"/qk vorlesen – Fokus-Quest vorlesen lassen",
+  L"/qk fokus – Fokus-Quest aufheben",
+  L"/qk einblenden – ausgeblendete Quests wieder zeigen",
+  L"/qk zuruecksetzen – alles auf Anfang",
+  L"/qk diagnose | fehler – technische Infos für Fehlerberichte",
+}
+
+-- Englische Befehle
+local ALIAS = {
+  settings = "einstellungen", options = "einstellungen", setup = "einrichten", book = "buch", world = "welt",
+  journal = "tagebuch", search = "suche", nearest = "naechste", read = "vorlesen", focus = "fokus",
+  show = "einblenden", errors = "fehler", waypoint = "weg", wp = "weg", planner = "planer",
+  achievements = "erfolge", milestones = "erfolge", note = "notiz", alts = "twinks", cleanup = "aufraeumen",
+  language = "sprache",
 }
 
 SLASH_QUESTKOMPASS1 = "/qk"
@@ -481,11 +547,12 @@ SLASH_QUESTKOMPASS2 = "/questkompass"
 SlashCmdList.QUESTKOMPASS = function(eingabe)
   local befehl, rest = (eingabe or ""):match("^%s*(%S*)%s*(.-)%s*$")
   befehl = befehl:lower()
+  befehl = ALIAS[befehl] or befehl
   local db = QK.db
   if befehl == "" then
     QK.Tracker:Umschalten()
   elseif befehl == "hilfe" or befehl == "help" or befehl == "?" then
-    QK:Meldung("Version %s, Questdaten vom %s", QK.version, QK.datenStand or "?")
+    QK:Meldung(L"Version %s, Questdaten vom %s", QK.version, QK.datenStand or "?")
     for _, zeile in ipairs(HILFE) do DEFAULT_CHAT_FRAME:AddMessage("  " .. zeile) end
   elseif befehl == "einstellungen" or befehl == "optionen" or befehl == "config" then
     QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true)
@@ -506,42 +573,54 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
   elseif befehl == "fokus" then
     QK.Compat:FokusSetzen(nil)
     QK:Anwenden()
-    QK:Meldung("Fokus aufgehoben.")
+    QK:Meldung(L"Fokus aufgehoben.")
   elseif befehl == "einblenden" then
     wipe(QK.char.ausgeblendet)
     QK:Anwenden()
-    QK:Meldung("alle Quests sind wieder sichtbar.")
+    QK:Meldung(L"alle Quests sind wieder sichtbar.")
   elseif befehl == "zuruecksetzen" or befehl == "reset" then
     wipe(db)
     QK:Standardwerte(db)
     db.eingerichtet = true
     QK:Anwenden()
-    QK:Meldung("Einstellungen zurückgesetzt. /qk einrichten startet den Assistenten.")
+    QK:Meldung(L"Einstellungen zurückgesetzt. /qk einrichten startet den Assistenten.")
   elseif befehl == "diagnose" then
     QK.Compat:Diagnose(true)
   elseif befehl == "fehler" then
     local liste = QK.root.fehler
     if not liste or #liste == 0 then
-      QK:Meldung("keine Fehler aufgezeichnet.")
+      QK:Meldung(L"keine Fehler aufgezeichnet.")
     else
-      QK:Meldung("die letzten %d Fehler:", #liste)
+      QK:Meldung(L"die letzten %d Fehler:", #liste)
       for _, f in ipairs(liste) do DEFAULT_CHAT_FRAME:AddMessage("  " .. f) end
     end
+  elseif QK.befehle[befehl] then
+    QK.befehle[befehl](rest)
   else
-    QK:Meldung("unbekannter Befehl. /qk hilfe zeigt alle Befehle.")
+    QK:Meldung(L"unbekannter Befehl. /qk hilfe zeigt alle Befehle.")
   end
+end
+
+-- Weitere Befehle aus anderen Dateien: QK:Befehl({ "route" }, fn, "/qk route – …")
+QK.befehle = {}
+function QK:Befehl(namen, fn, hilfe)
+  for _, n in ipairs(namen) do QK.befehle[n] = fn end
+  if hilfe then table.insert(HILFE, #HILFE - 2, hilfe) end
 end
 
 ---------------------------------------------------------------------------
 -- Tastenkürzel (Bindings.xml)
 ---------------------------------------------------------------------------
 BINDING_HEADER_QUESTKOMPASS = "Questkompass"
-BINDING_NAME_QUESTKOMPASS_LISTE = "Liste ein- oder ausblenden"
-BINDING_NAME_QUESTKOMPASS_NAECHSTE = "Nächstgelegene Quest als Fokus"
-BINDING_NAME_QUESTKOMPASS_WEITER = "Fokus auf die nächste Quest der Liste"
-BINDING_NAME_QUESTKOMPASS_BUCH = "Questbuch öffnen"
-BINDING_NAME_QUESTKOMPASS_EINSTELLUNGEN = "Einstellungen öffnen"
-BINDING_NAME_QUESTKOMPASS_VORLESEN = "Fokus-Quest vorlesen"
+BINDING_NAME_QUESTKOMPASS_LISTE = L"Liste ein- oder ausblenden"
+BINDING_NAME_QUESTKOMPASS_NAECHSTE = L"Nächstgelegene Quest als Fokus"
+BINDING_NAME_QUESTKOMPASS_WEITER = L"Fokus auf die nächste Quest der Liste"
+BINDING_NAME_QUESTKOMPASS_ZURUECK = L"Fokus auf die vorige Quest der Liste"
+BINDING_NAME_QUESTKOMPASS_ROUTE = L"Route planen oder beenden"
+BINDING_NAME_QUESTKOMPASS_BUCH = L"Questbuch öffnen"
+BINDING_NAME_QUESTKOMPASS_PLANER = L"Planer öffnen"
+BINDING_NAME_QUESTKOMPASS_EINSTELLUNGEN = L"Einstellungen öffnen"
+BINDING_NAME_QUESTKOMPASS_VORLESEN = L"Fokus-Quest vorlesen"
 
 function QK:Taste(was)
   QK:Sicher("Taste", function()
@@ -550,6 +629,19 @@ function QK:Taste(was)
     elseif was == "weiter" then QK.Tracker:FokusWeiter()
     elseif was == "buch" then QK.Gebiet:Umschalten()
     elseif was == "vorlesen" then QK:FokusVorlesen()
-    elseif was == "einstellungen" then QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true) end
+    elseif was == "einstellungen" then QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true)
+    elseif QK.tasten[was] then QK.tasten[was]() end
   end)
 end
+QK.tasten = {}
+
+QK:Befehl({ "sprache", "language" }, function(rest)
+  rest = (rest or ""):lower()
+  if rest ~= "de" and rest ~= "en" and rest ~= "auto" then
+    QK:Meldung(L"/qk sprache de | en | auto")
+    return
+  end
+  QK.db.sprache = rest
+  QK:SpracheAnwenden()
+  QK:Meldung(L"Sprache geändert. Ganz wirkt sie nach /reload.")
+end, L"/qk sprache de | en | auto – Sprache der Oberfläche")

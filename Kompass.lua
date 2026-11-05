@@ -47,22 +47,60 @@ function K:Auffrischen(jetzt)
   end
 end
 
--- Liefert Winkel (Bogenmaß, im Uhrzeigersinn relativ zur Blickrichtung) und Entfernung in Yards.
-function K:Richtung(questID)
-  local z = ziele[questID]
-  if not z or not karte then return nil end
+-- Aktuelle Karte und Position des Charakters darauf.
+function K:Karte() return karte end
+function K:Ziel(questID) local z = ziele[questID]; if z then return z[1], z[2] end end
+function K:Ziele() return ziele end
+
+-- Richtung zu einem Punkt (x, y) auf der aktuellen Karte.
+-- Liefert: Winkel relativ zur Blickrichtung (im Uhrzeigersinn), Entfernung in Yards, Peilung ab Norden.
+function K:RichtungZuPunkt(x, y)
+  if not karte or not x then return nil end
   local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(karte, "player")
   if not pos then return nil end
   local px, py = pos:GetXY()
   if not px or (px == 0 and py == 0) then return nil end
   local g = Groesse(karte)
   local b, h = g and g[1] or 1000, g and g[2] or 667
-  local dx, dy = (z[1] - px) * b, (z[2] - py) * h
+  local dx, dy = (x - px) * b, (y - py) * h
   local entfernung = g and math.sqrt(dx * dx + dy * dy) or nil
-  local blick = GetPlayerFacing and GetPlayerFacing()
-  if not blick then return nil, entfernung end
   local peilung = atan2(dx, -dy)               -- im Uhrzeigersinn ab Norden
-  return peilung + blick, entfernung           -- GetPlayerFacing zählt gegen den Uhrzeigersinn
+  local blick = GetPlayerFacing and GetPlayerFacing()
+  if not blick then return nil, entfernung, peilung end
+  return peilung + blick, entfernung, peilung  -- GetPlayerFacing zählt gegen den Uhrzeigersinn
+end
+
+-- Liefert Winkel (Bogenmaß, im Uhrzeigersinn relativ zur Blickrichtung) und Entfernung in Yards.
+function K:Richtung(questID)
+  local z = ziele[questID]
+  if not z then return nil end
+  return self:RichtungZuPunkt(z[1], z[2])
+end
+
+-- Entfernung zwischen zwei Kartenpunkten in Yards (für die Routenplanung).
+function K:Abstand(x1, y1, x2, y2)
+  local g = karte and Groesse(karte)
+  local b, h = g and g[1] or 1000, g and g[2] or 667
+  return math.sqrt(((x2 - x1) * b) ^ 2 + ((y2 - y1) * h) ^ 2)
+end
+
+-- Rechnet einen Punkt einer anderen Karte auf die aktuelle Karte um (gleicher Kontinent).
+function K:Umrechnen(vonKarte, x, y)
+  if not karte or not vonKarte or not x then return nil end
+  if vonKarte == karte then return x, y end
+  if not (C_Map and C_Map.GetWorldPosFromMapPos and C_Map.GetMapPosFromWorldPos and CreateVector2D) then return nil end
+  local ok, kontinent, welt = pcall(C_Map.GetWorldPosFromMapPos, vonKarte, CreateVector2D(x, y))
+  if not ok or not kontinent or not welt then return nil end
+  local ok2, _, pos = pcall(C_Map.GetMapPosFromWorldPos, kontinent, welt, karte)
+  if not ok2 or not pos then return nil end
+  local nx, ny = pos:GetXY()
+  if nx and nx >= -1 and nx <= 2 and ny >= -1 and ny <= 2 then return nx, ny end
+end
+
+function K:Spieler()
+  if not karte then return nil end
+  local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(karte, "player")
+  if pos then return pos:GetXY() end
 end
 
 function K:Entfernung(questID)

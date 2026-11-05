@@ -9,9 +9,12 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 - **Navigation:** kleiner Kompasspfeil an jeder Quest, großer schwebender Fokuspfeil mit Entfernung und Ankunftszeit, automatischer Fokus auf die nächste Quest.
 - **Questgegenstände** lassen sich direkt an der Quest benutzen. Quests mit Zeitlimit zeigen einen Countdown.
 - **Erfahrungsvorschau:** was die fertigen Quests zusammen bringen, und ob es für den Stufenaufstieg reicht.
-- **Questbuch** mit vier Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch) und Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde).
+- **Questbuch** mit sechs Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch), Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde), Planer (Stufenplaner, Vorschläge, Ruf, tägliche Quests, Aufräumen) und Erfolge (Meilensteine).
+- **Route und Wegpunkte:** kürzeste Route durch alle Quests der Karte, eigene Wegpunkte per Befehl oder Alt+Klick auf die Weltkarte, Pfeil am Minikartenrand, Abgabe-Erinnerung.
+- **Gemeinschaft:** Twink-Hilfe (was andere Charaktere schon erledigt haben), Gruppen-Abgleich („Kumpel 3/8“), fertige Suchnachricht für Gruppenquests, Notizen je Quest.
 - **Kleine Helfer:** Meldung und Klang bei Fortschritt, Fortschritt an die Gruppe, Warnung bei vollem Questlog, automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp, Knopf an der Minikarte.
-- **Barrierefreiheit:** Vorlesen über die Sprachausgabe des Spiels, hoher Kontrast, Farbenblind-Modus (Blau/Orange, Status als Wort), alles größer (Liste bis 200 %), weniger Bewegung. Alles über Tastatur erreichbar.
+- **Barrierefreiheit:** Vorlesen über die Sprachausgabe des Spiels, hoher Kontrast, Farbenblind-Modus (Blau/Orange, Status als Wort), alles größer (Liste bis 200 %), weniger Bewegung. Alles über Tastatur erreichbar, Questbuch und Assistent auch mit Gamepad und Pfeiltasten.
+- **Sprachen:** Deutsch und Englisch, automatisch nach Spielsprache.
 - **Profile** für alle Charaktere oder einzeln, **Tastenkürzel** unter „AddOns“ in den Tastenbelegungen.
 - **Quest-Tooltips:** Quest-Links im Chat zeigen Gebiet, Typ, Erfahrung und Ruf.
 
@@ -27,6 +30,12 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 | `/qk suche Text` | Quest suchen |
 | `/qk naechste` | nächstgelegene Quest als Fokus |
 | `/qk vorlesen` | Fokus-Quest vorlesen lassen |
+| `/qk route` | Route durch alle Quests der Karte planen oder beenden |
+| `/qk weg X Y [Name]` | eigener Wegpunkt (`/qk weg` löscht ihn) |
+| `/qk planer` · `/qk erfolge` | Planer und Meilensteine im Questbuch |
+| `/qk notiz [Text]` | Notiz zur Fokus-Quest |
+| `/qk twinks` | deine Charaktere und ihre erledigten Quests |
+| `/qk sprache de \| en \| auto` | Sprache der Oberfläche |
 | `/qk fokus` | Fokus aufheben |
 | `/qk einblenden` | ausgeblendete Quests wieder zeigen |
 | `/qk zuruecksetzen` | alle Einstellungen zurücksetzen |

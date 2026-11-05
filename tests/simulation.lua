@@ -79,6 +79,8 @@ local function Durchlauf(modern)
     return f
   end
   UIParent, Minimap = NeuesObjekt("Frame"), NeuesObjekt("Frame")
+  Minimap.IsVisible = function() return true end
+  Minimap.GetZoom = function() return zoom end
   GameTooltip, ItemRefTooltip = NeuesObjekt("GameTooltip"), NeuesObjekt("GameTooltip")
   if modern then ObjectiveTrackerFrame = NeuesObjekt("Frame") else QuestWatchFrame = NeuesObjekt("Frame") end
   DEFAULT_CHAT_FRAME = { AddMessage = function(_, t) end }
@@ -117,6 +119,25 @@ local function Durchlauf(modern)
   RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
   time = os.time
   SOUNDKIT = { IG_QUEST_LIST_COMPLETE = 1 }
+  LE_QUEST_FREQUENCY_DAILY, LE_QUEST_FREQUENCY_WEEKLY = 1, 2
+  GetRealmName = function() return "Forever" end
+  Ambiguate = function(n) return (n:match("^[^-]+")) end
+  UnitInParty = function(n) return n == "Kumpel" end
+  local popups = {}
+  StaticPopupDialogs = {}
+  StaticPopup_Show = function(name, a, b, daten) popups[#popups + 1] = { name = name, text = a, daten = daten } end
+  local offenerChat
+  ChatFrame_OpenChat = function(t) offenerChat = t end
+  local addonNachrichten = {}
+  C_ChatInfo = {
+    RegisterAddonMessagePrefix = function() return true end,
+    SendAddonMessage = function(p, t, k) addonNachrichten[#addonNachrichten + 1] = t end,
+  }
+  local zoom = 0
+  GetCVar = function() return "0" end
+  IsIndoors = function() return false end
+  local instanz = false
+  IsInInstance = function() if instanz then return true, "party" end return false, "none" end
 
   local fraktion, klasse, volk = modern and "Horde" or "Alliance", 1, modern and 6 or 1
   GetLocale = function() return "deDE" end
@@ -153,7 +174,7 @@ local function Durchlauf(modern)
     CQ.GetInfo = function(i)
       local e = log[i]
       if not e then return nil end
-      return { title = e[1], level = e[2], suggestedGroup = e[3], isHeader = e.h or false, questID = e.id }
+      return { title = e[1], level = e[2], suggestedGroup = e[3], isHeader = e.h or false, questID = e.id, frequency = e.freq }
     end
     CQ.GetQuestObjectives = function(id)
       for _, e in ipairs(log) do
@@ -220,7 +241,7 @@ local function Durchlauf(modern)
   pruefe(QK.Compat.modern == modern, "richtige Quest-API erkannt")
   pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent öffnet beim ersten Start")
   pruefe(enthaelt("Willkommen") and enthaelt("Los geht’s"), "Willkommensseite")
-  for i = 1, 9 do
+  for i = 1, 10 do
     alleTexte = {}
     QK.Assistent:Oeffnen(i)
   end
@@ -428,9 +449,158 @@ local function Durchlauf(modern)
   QK:Anwenden()
   pruefe(QK.farben.gruen[3] < 0.5, "Farben zurück auf normal")
 
+  -- 0.5
+  local function texte(fn) alleTexte = {}; fn(); return alleTexte end
+  pruefe(QK.Gebiet:Fenster() and true, "Questbuch vorhanden")
+  -- Planer
+  QK.char.angenommen[modern and 776 or 176] = time() - 10 * 86400
+  texte(function() QK.Gebiet:Reiter("planer") end)
+  pruefe(enthaelt("Ziel: Stufe 6") and enthaelt("Vorschläge in deiner Gegend") and enthaelt("seit 10 Tagen im Log"), "Planer mit Stufenziel, Vorschlägen und Aufräumen")
+  pruefe(QK.Planer:Bedarf(7) == 500 + 3600, "EP bis Stufe 7: " .. tostring(QK.Planer:Bedarf(7)))
+  pruefe(#QK.Planer:Vorschlaege(5) == 5, "fünf Questvorschläge")
+  -- Meilensteine
+  QK.Erfolge:Pruefen()
+  QK.char.routenGeschafft = 1
+  alleTexte = {}
+  QK.Erfolge:Pruefen()
+  pruefe(enthaelt("MEILENSTEIN") and QK.char.erfolge.route1, "Meilenstein wird gemeldet")
+  texte(function() QK.Gebiet:Reiter("erfolge") end)
+  pruefe(enthaelt(("von %d erreicht"):format(#QK.Erfolge.LISTE)), "Reiter Erfolge")
+  -- Gamepad/Tastatur
+  local fenster = QK.Gebiet:Fenster()
+  local gedrueckt
+  QK.Gamepad:Anmelden(fenster, function(a) gedrueckt = a; return true end)
+  fenster.skripte.OnGamePadButtonDown(fenster, "PADDDOWN")
+  fenster.skripte.OnKeyDown(fenster, "ENTER")
+  pruefe(gedrueckt == "ok", "Gamepad und Tasten im Questbuch")
+  QK.Gebiet:Reiter("welt")
+  QK.Gebiet:Bewegen(1)
+  QK.Gebiet:Ausloesen()
+  QK.Gebiet:ReiterWechseln(1)
+  QK.Assistent:Oeffnen(3, true)
+  pruefe(QK.Assistent:Steuern("runter") and QK.Assistent:Steuern("ok") and QK.Assistent:Steuern("rechts"), "Assistent mit Gamepad")
+  QK.Assistent:Schliessen()
+  -- Twinks
+  QK.Twinks:Einlesen()
+  QK.root.charaktere["Zweitchar-Forever"] = { name = "Zweitchar", stufe = 9, erledigt = { [modern and 776 or 176] = true } }
+  pruefe(QK.Twinks:Ich() and QK.Twinks:Andere(modern and 776 or 176)[1] == "Zweitchar", "Twink-Hilfe kennt andere Charaktere")
+  local offen
+  for _, q in ipairs(QK.Gebiet:Liste(QK:AktuellesGebiet())) do if q.status == 2 then offen = q end end
+  QK.root.charaktere["Zweitchar-Forever"].erledigt[offen.id] = true
+  pruefe(QK.Gebiet.QuestEintrag(offen).text:find("(Twink)", 1, true), "Twink-Marke im Questbuch")
+  -- Notizen
+  QK.Notizen:Setzen(modern and 750 or 11, "  Beim Brunnen  ")
+  texte(function() QK.Tracker:Aktualisieren() end)
+  pruefe(enthaelt("Beim Brunnen"), "Notiz in der Liste")
+  QK.Notizen:Bearbeiten(750, "x")
+  pruefe(popups[#popups].name == "QUESTKOMPASS_NOTIZ" and StaticPopupDialogs.QUESTKOMPASS_NOTIZ, "Notiz-Dialog")
+  -- Goldvorschau und tägliche Quests
+  GetQuestLogRewardMoney = function() return 12345 end
+  if not modern then GetQuestLogSelection = function() return 0 end; SelectQuestLogEntry = function() end end
+  C_DateAndTime = { GetSecondsUntilDailyReset = function() return 3600 end }
+  log[modern and 2 or 2].freq = 1
+  texte(function() QK.Tracker:Aktualisieren() end)
+  pruefe(enthaelt("UI-GoldIcon"), "Goldvorschau")
+  if modern then pruefe(enthaelt("Tägliche: 1 offen") and enthaelt("1:00:00") == false and enthaelt("1:00 Std."), "Zeile für tägliche Quests") end
+  -- Gruppen-Abgleich und Gruppensuche
+  gruppe = 1
+  QK.Gruppe:Verschicken(true)
+  pruefe(#addonNachrichten > 0 and addonNachrichten[#addonNachrichten]:sub(1, 1) == "S", "Fortschritt an die Gruppe senden")
+  if modern then
+    feuern("CHAT_MSG_ADDON", "Questkompass", "S750=3/10;790=F", "PARTY", "Kumpel-Forever")
+    texte(function() QK.Tracker:Aktualisieren() end)
+    pruefe(enthaelt("Kumpel 3/10"), "Fortschritt der Gruppe in der Liste")
+    local tafel
+    for _, q in ipairs(QK.Compat:Questlog()) do if q.id == 790 then tafel = q end end
+    QK.Gruppe:Suchen(tafel)
+    pruefe(offenerChat and offenerChat:find("Suche Gruppe für", 1, true), "Gruppensuche vorbereitet: " .. tostring(offenerChat))
+  end
+  gruppe = 0
+  feuern("GROUP_ROSTER_UPDATE")
+  -- Instanz-Modus und Kampf
+  if modern then
+    instanz = true
+    texte(function() QK.Tracker:Aktualisieren() end)
+    pruefe(enthaelt("Dungeon · ") and not enthaelt("Tafel der Ahnen"), "Instanz-Modus zeigt nur passende Quests")
+    instanz = false
+    QK.db.kampfNurFokus = true
+    QK.Compat:FokusSetzen(750)
+    imKampf = true
+    feuern("PLAYER_REGEN_DISABLED")
+    texte(function() QK.Tracker:Aktualisieren() end)
+    pruefe(enthaelt("Jagd") and not enthaelt("Riten"), "im Kampf nur die Fokus-Quest")
+    imKampf = false
+    feuern("PLAYER_REGEN_ENABLED")
+    QK.db.kampfNurFokus = false
+  end
+  -- Mouseover
+  QK.db.mouseover = true
+  local echteZeit = GetTime
+  GetTime = function() return echteZeit() + 100000 end
+  QK.Tracker:Ruhe()
+  pruefe(QuestkompassListe.alpha == 0, "Mouseover-Modus blendet aus")
+  QuestkompassListe.IsMouseOver = function() return true end
+  QK.Tracker:Ruhe()
+  pruefe(QuestkompassListe.alpha == 1, "Mouseover-Modus zeigt bei Maus")
+  QuestkompassListe.IsMouseOver = nil
+  GetTime = echteZeit
+  QK.db.mouseover = false
+  QK.Tracker:Ruhe()
+  -- Navigation
+  if modern then
+    SlashCmdList.QUESTKOMPASS("route")
+    local r = QK.char.route
+    pruefe(r and #r.stationen == 2 and r.stationen[1].id == 750 and fokus == 750, "Route geplant, nächste Station zuerst")
+    pruefe(QK.Navigation:Station(750) == 1 and QK.Navigation:Station(776) == 2, "Stationen nummeriert")
+    log[3].ziele[1][3] = true
+    C_QuestLog.IsComplete = function(id) return id == 790 or id == 750 end
+    alleTexte = {}
+    QK.Navigation:RoutePruefen()
+    pruefe(fokus == 776 and enthaelt("STATION 2 VON 2"), "Route führt zur nächsten Station")
+    log[2].ziele[1][3] = true
+    C_QuestLog.IsComplete = function(id) return id ~= nil end
+    alleTexte = {}
+    QK.Navigation:RoutePruefen()
+    pruefe(QK.char.route == nil and enthaelt("ROUTE GESCHAFFT"), "Route geschafft")
+    local w = QK.Navigation:Reihenfolge({ { x = 0, y = 0 }, { x = 0.9, y = 0 }, { x = 0.1, y = 0 }, { x = 0.5, y = 0 } })
+    pruefe(table.concat(w, ",") == "1,3,4,2", "Reihenfolge der Route: " .. table.concat(w, ","))
+    SlashCmdList.QUESTKOMPASS("weg 45,5 60 Brunnen")
+    local wp = QK.char.wegpunkt
+    pruefe(wp and math.abs(wp.x - 0.455) < 0.0001 and wp.name == "Brunnen", "Wegpunkt per Befehl")
+    QK.db.pfeilGross = true
+    alleTexte = {}
+    QK.Pfeil:Aktualisieren()
+    pruefe(QuestkompassPfeil.gezeigt and enthaelt("Brunnen"), "Fokuspfeil führt zum Wegpunkt")
+    QK.Navigation:Minikarte()
+    pruefe(QuestkompassRandpfeil.gezeigt, "Pfeil am Minikartenrand")
+    QK.char.wegpunkt.x, QK.char.wegpunkt.y = 0.5, 0.5005
+    alleTexte = {}
+    QK.Pfeil:Drehen()
+    pruefe(QK.char.wegpunkt == nil and enthaelt("WEGPUNKT ERREICHT"), "Wegpunkt erreicht")
+    C_QuestLog.GetDistanceSqToQuest = function(id) if id == 790 then return 30 * 30, true end end
+    alleTexte = {}
+    QK.Navigation:Abgabe()
+    pruefe(enthaelt("ABGABE IN DER NÄHE"), "Abgabe-Erinnerung")
+  end
+  -- Belohnungs-Vergleich
+  GetItemInfo = function(link)
+    local i = tonumber(link:match("%d+"))
+    return "x", link, 2, i == 9 and 10 or 20, 1, "x", "x", 1, "INVTYPE_HEAD", 1, i == 2 and 500 or 100
+  end
+  GetInventoryItemLink = function(_, platz) if platz == 1 then return "item:9" end end
+  alleTexte = {}
+  feuern("QUEST_COMPLETE")
+  pruefe(enthaelt("besser +10"), "Belohnungs-Vergleich")
+  -- Sprache
+  QK.englischUI = true
+  pruefe(QK.L("Fertig") == "Done" and QK.L("unbekannt bleibt") == "unbekannt bleibt", "englische Texte")
+  QK.englischUI = false
+
   -- Befehle
   for _, b in ipairs({ "", "", "hilfe", "einstellungen", "einrichten", "gebiet", "gebiet Westfall", "gebiet Atlantis",
-      "fokus", "vorlesen", "einblenden", "diagnose", "fehler", "zuruecksetzen", "quatsch" }) do
+      "fokus", "vorlesen", "einblenden", "diagnose", "fehler", "route", "route", "weg 12 34", "weg", "planer", "erfolge",
+      "twinks", "notiz Test", "notiz -", "help", "settings", "sprache en", "sprache auto", "sprache xx", "aufraeumen", "alts",
+      "zuruecksetzen", "quatsch" }) do
     local ok, err = pcall(SlashCmdList.QUESTKOMPASS, b)
     Timer()
     pruefe(ok, "/qk " .. b .. (ok and "" or (" → " .. tostring(err))))
@@ -441,5 +611,27 @@ end
 
 Durchlauf(true)
 Durchlauf(false)
+
+-- Jeder Text in L"…" braucht eine englische Übersetzung (oder ist in beiden Sprachen gleich).
+print("\n== Englische Texte ==")
+do
+  local QK = {}
+  GetLocale = function() return "enUS" end
+  assert(loadfile("Locale.lua"))("Questkompass", QK)
+  local fehlend, gesamt = {}, 0
+  local GLEICH = { Gold = true, Dungeon = true, Navigation = true, Navigator = true, ["Elite!"] = true, Twink = true, ["Quest "] = true, ["Questkompass:|r "] = true }
+  for _, datei in ipairs(toc) do
+    if datei:match("%.lua$") and not datei:match("Daten") and datei ~= "Locale.lua" then
+      local inhalt = io.open(datei):read("*a")
+      for text in inhalt:gmatch('[^%w]L%(?"(.-[^\\])"') do
+        gesamt = gesamt + 1
+        local wert = loadstring('return "' .. text .. '"')()
+        if not QK.EN[wert] and not GLEICH[wert] then fehlend[#fehlend + 1] = datei .. ": " .. text end
+      end
+    end
+  end
+  for _, f in ipairs(fehlend) do print("  fehlt: " .. f) end
+  pruefe(#fehlend == 0, ("%d Texte, alle übersetzt"):format(gesamt))
+end
 print(("\n%d Prüfungen, %s"):format(geprueft, fehler == 0 and "alles in Ordnung." or (fehler .. " Fehler.")))
 os.exit(fehler == 0 and 0 or 1)

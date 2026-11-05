@@ -1,6 +1,7 @@
 -- Questkompass: kurze Meldungen, wenn ein Ziel oder eine ganze Quest fertig wird.
 local _, QK = ...
 local M = QK:Modul("Meldungen")
+local L = QK.L
 
 local stand = nil          -- questID -> { fertig, ziele = { [i] = fertig } }
 local anzeige
@@ -71,14 +72,14 @@ local function Pruefen()
     if alt then
       if q.fertig and not alt.fertig then
         if QK.db.meldungen then M:Zeigen("BEREIT ZUM ABGEBEN", HAKEN .. q.titel); Klang() end
-        Gruppe(q.titel .. " ist fertig.")
+        Gruppe(q.titel .. L" ist fertig.")
       elseif not q.fertig then
         for i, z in ipairs(q.ziele) do
           if z.fertig and alt.ziele[i] == false then
             if QK.db.meldungen then
               M:Zeigen(q.titel, HAKEN .. z.text .. ((z.soll and z.soll > 1) and (" " .. z.soll .. "/" .. z.soll) or ""))
             end
-            Gruppe(("%s: %s erledigt"):format(q.titel, z.text))
+            Gruppe((L"%s: %s erledigt"):format(q.titel, z.text))
           elseif z.ist and alt.ist[i] and z.ist > alt.ist[i] and z.soll then
             Gruppe(("%s: %s %d/%d"):format(q.titel, z.text, z.ist, z.soll))
           end

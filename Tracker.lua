@@ -1,6 +1,7 @@
 -- Questkompass: die Zielliste.
 local _, QK = ...
 local T = QK:Modul("Tracker")
+local L = QK.L
 
 local HAKEN = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12:0:0|t "
 local PFEIL = "Interface\\Minimap\\MiniMap-QuestArrow"
@@ -22,6 +23,8 @@ local menue
 local knoepfe = {}          -- Questgegenstände (sichere Knöpfe)
 local neu = {}              -- questID -> Zeitpunkt der Annahme
 local logVoll = false
+local signatur, sichtbarBis = nil, 0   -- Mouseover-Modus: kurz zeigen, wenn sich etwas ändert
+local imKampf = false
 T.neu = neu
 
 ---------------------------------------------------------------------------
@@ -98,21 +101,25 @@ function T:FokusNaechste(still)
   bester = bester or ersatz
   if bester then
     QK.Compat:FokusSetzen(bester.id)
-    if not still then QK:Meldung("Fokus: %s", bester.titel) end
+    if not still then QK:Meldung(L"Fokus: %s", bester.titel) end
   elseif not still then
-    QK:Meldung("keine Quest mit Ziel auf dieser Karte.")
+    QK:Meldung(L"keine Quest mit Ziel auf dieser Karte.")
   end
   T:Planen()
 end
 
-function T:FokusWeiter()
+function T:FokusWeiter(richtung)
   if #sichtbar == 0 then return end
   local jetzt, pos = QK.Compat:Fokus(), 0
   for i, q in ipairs(sichtbar) do if q.id == jetzt then pos = i end end
-  local q = sichtbar[(pos % #sichtbar) + 1]
+  if pos == 0 and richtung == -1 then pos = 1 end
+  local q = sichtbar[((pos - 1 + (richtung or 1)) % #sichtbar) + 1]
   QK.Compat:FokusSetzen(q.id)
+  if QK.db.vorlesen then QK:Sprechen(q.titel) end
   T:Planen()
 end
+
+function T:Sichtbar() return sichtbar end
 
 ---------------------------------------------------------------------------
 -- Zeilen
@@ -127,20 +134,23 @@ end
 local function QuestMenue(zeile, q)
   local fokus = QK.Compat:Fokus() == q.id
   local e = {
-    { fokus and "Fokus aufheben" or "Als Fokus setzen (Navigationspfeil)", function()
+    { fokus and L"Fokus aufheben" or L"Als Fokus setzen (Navigationspfeil)", function()
       QK.Compat:FokusSetzen(not fokus and q.id or nil); T:Aktualisieren() end },
-    { "Im Questlog öffnen", function() QK.Compat:QuestOeffnen(q) end },
-    { "Link in den Chat", function() LinkInChat(q) end },
+    { L"Im Questlog öffnen", function() QK.Compat:QuestOeffnen(q) end },
+    { L"Link in den Chat", function() LinkInChat(q) end },
   }
   if (IsInGroup and IsInGroup()) or (GetNumPartyMembers and GetNumPartyMembers() > 0) then
-    e[#e + 1] = { "Mit der Gruppe teilen", function() QK.Compat:Teilen(q) end }
+    e[#e + 1] = { L"Mit der Gruppe teilen", function() QK.Compat:Teilen(q) end }
   end
   if q.zone then
-    e[#e + 1] = { "Gebietsfortschritt: " .. q.zone, function() QK.Gebiet:Zeigen(q.zone) end }
+    e[#e + 1] = { L"Gebietsfortschritt: " .. q.zone, function() QK.Gebiet:Zeigen(q.zone) end }
   end
-  e[#e + 1] = { "Hier ausblenden", function()
+  for _, extra in ipairs(QK:Rufe("menue", q)) do
+    for _, eintrag in ipairs(extra) do e[#e + 1] = eintrag end
+  end
+  e[#e + 1] = { L"Hier ausblenden", function()
     QK.char.ausgeblendet[q.id] = true
-    QK:Meldung("„%s“ ausgeblendet. /qk einblenden holt sie zurück.", q.titel)
+    QK:Meldung(L"„%s“ ausgeblendet. /qk einblenden holt sie zurück.", q.titel)
     T:Aktualisieren()
   end }
   MenueZeigen(zeile, e)
@@ -175,7 +185,7 @@ local function ZeileTooltip(self)
   local q = self.quest
   if self.art == "ep" then
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    GameTooltip:AddLine("Erfahrung bereit zum Abgeben", unpack(QK.farben.gold))
+    GameTooltip:AddLine(self.titelTipp or L"Bereit zum Abgeben", unpack(QK.farben.gold))
     GameTooltip:AddLine(self.tipp or "", 0.85, 0.85, 0.85, true)
     GameTooltip:Show()
     return
@@ -186,21 +196,21 @@ local function ZeileTooltip(self)
   if q.zone then GameTooltip:AddLine(q.zone, 0.8, 0.8, 0.8) end
   local d = QK.Kompass:Entfernung(q.id)
   if d then
-    GameTooltip:AddDoubleLine("Entfernung", QK:EntfernungText(d), 0.6, 0.6, 0.6, 0.85, 0.85, 0.85)
+    GameTooltip:AddDoubleLine(L"Entfernung", QK:EntfernungText(d), 0.6, 0.6, 0.6, 0.85, 0.85, 0.85)
     local tempo = GetUnitSpeed and GetUnitSpeed("player")
     if tempo and tempo > 0 then
-      GameTooltip:AddDoubleLine("Ankunft in etwa", QK:DauerText(d / tempo), 0.6, 0.6, 0.6, 0.85, 0.85, 0.85)
+      GameTooltip:AddDoubleLine(L"Ankunft in etwa", QK:DauerText(d / tempo), 0.6, 0.6, 0.6, 0.85, 0.85, 0.85)
     end
   end
   if q.mitspieler and #q.mitspieler > 0 then
-    GameTooltip:AddDoubleLine("Auch dabei", table.concat(q.mitspieler, ", "), 0.6, 0.6, 0.6, 0.5, 0.75, 1)
+    GameTooltip:AddDoubleLine(L"Auch dabei", table.concat(q.mitspieler, ", "), 0.6, 0.6, 0.6, 0.5, 0.75, 1)
   end
   QK.Tooltip:Ergaenzen(GameTooltip, q.id, true)
   GameTooltip:AddLine(" ")
-  GameTooltip:AddLine("Klick: Fokus mit Navigationspfeil", 0.6, 0.6, 0.6)
-  GameTooltip:AddLine("Strg+Klick: im Questlog öffnen", 0.6, 0.6, 0.6)
-  GameTooltip:AddLine("Umschalt+Klick: Link in den Chat", 0.6, 0.6, 0.6)
-  GameTooltip:AddLine("Rechtsklick: weitere Möglichkeiten", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(L"Klick: Fokus mit Navigationspfeil", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(L"Strg+Klick: im Questlog öffnen", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(L"Umschalt+Klick: Link in den Chat", 0.6, 0.6, 0.6)
+  GameTooltip:AddLine(L"Rechtsklick: weitere Möglichkeiten", 0.6, 0.6, 0.6)
   GameTooltip:Show()
 end
 
@@ -256,7 +266,7 @@ local function Zeile(art, text, farbe, quest, y)
   z.pfeil:Hide()
   z.balken:Hide()
   z.fokus:Hide()
-  z.art, z.quest, z.zeitEnde, z.gruppe, z.tipp, z.richtung, z.pfeilAn = art, quest, nil, nil, nil, nil, nil
+  z.art, z.quest, z.zeitEnde, z.gruppe, z.tipp, z.richtung, z.pfeilAn, z.titelTipp = art, quest, nil, nil, nil, nil, nil, nil
   z:ClearAllPoints()
   z:SetPoint("TOPLEFT", rahmen, "TOPLEFT", 10, y)
   z:SetPoint("TOPRIGHT", rahmen, "TOPRIGHT", -10, y)
@@ -292,10 +302,12 @@ local function Marken(q)
   local m = {}
   local typ = q.daten and q.daten.typ
   if typ then m[#m + 1] = "|cffd98c40" .. (QK:TypName(typ) or "") .. "|r" end
-  if TAEGLICH and q.haeufigkeit == TAEGLICH then m[#m + 1] = "|cff6fb6ffTäglich|r"
-  elseif WOECHENTLICH and q.haeufigkeit == WOECHENTLICH then m[#m + 1] = "|cff6fb6ffWöchentlich|r" end
+  if TAEGLICH and q.haeufigkeit == TAEGLICH then m[#m + 1] = L"|cff6fb6ffTäglich|r"
+  elseif WOECHENTLICH and q.haeufigkeit == WOECHENTLICH then m[#m + 1] = L"|cff6fb6ffWöchentlich|r" end
   if q.mitspieler and #q.mitspieler > 0 then m[#m + 1] = "|cff7fbfff[" .. #q.mitspieler .. "]|r" end
   if q.neu then m[#m + 1] = QK.gold .. "Neu|r" end
+  if q.route then m[#m + 1] = QK.gold .. "#" .. q.route .. "|r" end
+  for _, extra in ipairs(QK:Rufe("marke", q)) do m[#m + 1] = extra end
   return #m > 0 and (" " .. table.concat(m, " ")) or ""
 end
 
@@ -310,9 +322,12 @@ local function Sortieren(quests, hier)
     q.grau = QK.Compat:IstGrau(q)
     q.neu = QK.db.neuMarkierung and neu[q.id] and jetzt - neu[q.id] < NEU_DAUER or false
     q.mitspieler = QK.db.mitspieler and QK.Compat:Mitspieler(q) or nil
+    q.route = QK.Navigation and QK.Navigation:Station(q.id) or nil
   end
   table.sort(quests, function(a, b)
     if (a.id == fokus) ~= (b.id == fokus) then return a.id == fokus end
+    if (a.route ~= nil) ~= (b.route ~= nil) then return a.route ~= nil end
+    if a.route and b.route then return a.route < b.route end
     if art ~= "log" then
       if a.grau ~= b.grau then return b.grau end
       if art == "entfernung" and a.entfernung and b.entfernung then return a.entfernung < b.entfernung end
@@ -333,7 +348,7 @@ local function Eintraege(quests)
   end
   local gruppen, reihenfolge = {}, {}
   for _, q in ipairs(quests) do
-    local g = q.zone or "Sonstige"
+    local g = q.zone or L"Sonstige"
     if not gruppen[g] then gruppen[g] = {}; reihenfolge[#reihenfolge + 1] = g end
     table.insert(gruppen[g], q)
   end
@@ -349,23 +364,68 @@ end
 ---------------------------------------------------------------------------
 -- Zeichnen
 ---------------------------------------------------------------------------
+-- Erfahrungs- und Goldvorschau: was die fertigen Quests zusammen bringen.
 local function EPVorschau(quests, y)
-  if not QK.db.epVorschau then return y end
+  local db = QK.db
+  if not db.epVorschau and not db.goldVorschau then return y end
   local maxStufe = (GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion()) or MAX_PLAYER_LEVEL or 60
-  if (UnitLevel("player") or 1) >= maxStufe then return y end
-  local summe, anzahl = 0, 0
+  local mitEP = db.epVorschau and (UnitLevel("player") or 1) < maxStufe
+  local summe, anzahl, gold = 0, 0, 0
   for _, q in ipairs(quests) do
-    if q.fertig and q.daten and q.daten.ep then summe, anzahl = summe + q.daten.ep, anzahl + 1 end
+    if q.fertig then
+      if q.daten and q.daten.ep then summe = summe + q.daten.ep end
+      if db.goldVorschau then gold = gold + (QK.Compat:Gold(q) or 0) end
+      anzahl = anzahl + 1
+    end
   end
-  if summe <= 0 then return y end
+  if not mitEP then summe = 0 end
+  if summe <= 0 and gold <= 0 then return y end
   local ist, max = UnitXP("player") or 0, UnitXPMax("player") or 1
-  local prozent = math.floor(summe / max * 100 + 0.5)
-  local text = ("%s bereit · %d %% der Stufe"):format(QK:EPText(summe), prozent)
-  if ist + summe >= max then text = text .. " · " .. QK.gold .. "Stufenaufstieg!|r" end
+  local teile = {}
+  if summe > 0 then
+    teile[#teile + 1] = (L"%s bereit · %d %% der Stufe"):format(QK:EPText(summe), math.floor(summe / max * 100 + 0.5))
+    if ist + summe >= max then teile[#teile + 1] = QK.gold .. L"Stufenaufstieg!" .. "|r" end
+  end
+  if gold > 0 then teile[#teile + 1] = QK:GeldText(gold) end
+  local z, h = Zeile("ep", table.concat(teile, " · "), QK.farben.hell, nil, y)
+  local werte = {}
+  if summe > 0 then werte[#werte + 1] = QK:EPText(summe) end
+  if gold > 0 then werte[#werte + 1] = QK:GeldText(gold) end
+  z.tipp = (L"%d fertige Quests bringen zusammen %s."):format(anzahl, table.concat(werte, L" und "))
+  if summe > 0 then
+    z.tipp = z.tipp .. "\n" .. (L"Aktuell: %s von %s EP."):format(BreakUpLargeNumbers and BreakUpLargeNumbers(ist) or ist, BreakUpLargeNumbers and BreakUpLargeNumbers(max) or max)
+    h = h + Balken(z, ist + summe, max, { 0.55, 0.45, 0.9 })
+  end
+  return y - h - 4
+end
+
+-- Tägliche Quests: wie viele offen sind und wann der Tag zurückgesetzt wird.
+function QK:BisZuruecksetzen()
+  if C_DateAndTime and C_DateAndTime.GetSecondsUntilDailyReset then
+    local ok, s = pcall(C_DateAndTime.GetSecondsUntilDailyReset)
+    if ok and s then return s end
+  end
+  if GetQuestResetTime then
+    local ok, s = pcall(GetQuestResetTime)
+    if ok and s and s > 0 then return s end
+  end
+end
+
+local function Taeglich(quests, y)
+  if not QK.db.taeglichZeile or not TAEGLICH then return y end
+  local offen, fertig = 0, 0
+  for _, q in ipairs(quests) do
+    if q.haeufigkeit == TAEGLICH then
+      if q.fertig then fertig = fertig + 1 else offen = offen + 1 end
+    end
+  end
+  if offen + fertig == 0 then return y end
+  local text = (L"Tägliche: %d offen, %d fertig"):format(offen, fertig)
+  local rest = QK:BisZuruecksetzen()
+  if rest then text = text .. " · " .. (L"neu in %s"):format(QK:DauerText(rest)) end
   local z, h = Zeile("ep", text, QK.farben.hell, nil, y)
-  z.tipp = ("%d fertige Quests bringen zusammen %s.\nAktuell: %s von %s EP."):format(anzahl, QK:EPText(summe),
-    BreakUpLargeNumbers and BreakUpLargeNumbers(ist) or ist, BreakUpLargeNumbers and BreakUpLargeNumbers(max) or max)
-  h = h + Balken(z, ist + summe, max, { 0.55, 0.45, 0.9 })
+  z.tipp = L"Tägliche Quests im Log. Nach dem Zurücksetzen lassen sie sich erneut annehmen."
+  z.titelTipp = L"Tägliche Quests"
   return y - h - 4
 end
 
@@ -387,7 +447,25 @@ function T:Aktualisieren()
       quests[#quests + 1] = q
     end
   end
-  Sortieren(quests, (QK:AktuelleGebiete()))
+  local hier = QK:AktuelleGebiete()
+  -- Instanz-Modus: im Dungeon nur Quests dieses Dungeons (wenn es welche gibt)
+  local modusText
+  if db.instanzModus and IsInInstance then
+    local drin, art = IsInInstance()
+    if drin and (art == "party" or art == "raid") then
+      local passend = {}
+      for _, q in ipairs(quests) do if QK:IstHier(q, hier) then passend[#passend + 1] = q end end
+      if #passend > 0 then quests = passend; modusText = L"Dungeon" end
+    end
+  end
+  -- Im Kampf nur die Fokus-Quest
+  local fokusJetzt = QK.Compat:Fokus()
+  if db.kampfNurFokus and imKampf and fokusJetzt then
+    for _, q in ipairs(quests) do
+      if q.id == fokusJetzt then quests = { q }; modusText = L"Kampf" break end
+    end
+  end
+  Sortieren(quests, hier)
 
   -- Auto-Fokus: ohne gültigen Fokus die nächstgelegene Quest nehmen.
   if db.autoFokus then
@@ -395,20 +473,20 @@ function T:Aktualisieren()
     for _, q in ipairs(alle) do if q.id == f then gueltig = true end end
     if not gueltig then
       for _, q in ipairs(quests) do
-        if q.entfernung and not q.fertig then QK.Compat:FokusSetzen(q.id); Sortieren(quests, (QK:AktuelleGebiete())) break end
+        if q.entfernung and not q.fertig then QK.Compat:FokusSetzen(q.id); Sortieren(quests, hier) break end
       end
     end
   end
 
   -- Zähler und Warnung bei vollem Questlog
   local max = QK.Compat:MaxQuests()
-  zaehler:SetText(("%d/%d"):format(#alle, max))
+  zaehler:SetText((modusText and (modusText .. " · ") or "") .. ("%d/%d"):format(#alle, max))
   local knapp = #alle >= max - 2
   if #alle >= max then zaehler:SetTextColor(unpack(QK.farben.rot))
   elseif knapp then zaehler:SetTextColor(1, 0.6, 0.2)
   else zaehler:SetTextColor(0.5, 0.5, 0.5) end
   if db.logWarnung and knapp and not logVoll and QK.Meldungen then
-    QK.Meldungen:Zeigen("QUESTLOG FAST VOLL", ("%d von %d Plätzen belegt"):format(#alle, max))
+    QK.Meldungen:Zeigen("QUESTLOG FAST VOLL", (L"%d von %d Plätzen belegt"):format(#alle, max))
   end
   logVoll = knapp
 
@@ -417,8 +495,9 @@ function T:Aktualisieren()
   local fokus = QK.Compat:Fokus()
   if not eingeklappt then
     y = EPVorschau(alle, y)
+    y = Taeglich(alle, y)
     if #quests == 0 then
-      local _, h = Zeile("info", #alle == 0 and "Keine Quests im Log. Zeit für ein Abenteuer!" or "Nichts zu zeigen.", QK.farben.grau, nil, y)
+      local _, h = Zeile("info", #alle == 0 and L"Keine Quests im Log. Zeit für ein Abenteuer!" or L"Nichts zu zeigen.", QK.farben.grau, nil, y)
       y = y - h
     end
     local eintraege = Eintraege(quests)
@@ -470,9 +549,9 @@ function T:Aktualisieren()
             y = y - hz
           end
           if q.gescheitert then
-            local _, hz = Zeile("ziel", "Gescheitert", QK.farben.rot, q, y); y = y - hz
+            local _, hz = Zeile("ziel", L"Gescheitert", QK.farben.rot, q, y); y = y - hz
           elseif q.fertig then
-            local _, hz = Zeile("ziel", HAKEN .. "Bereit zum Abgeben", QK.farben.gruen, q, y); y = y - hz
+            local _, hz = Zeile("ziel", HAKEN .. L"Bereit zum Abgeben", QK.farben.gruen, q, y); y = y - hz
           else
             local zahl = 0
             for _, ziel in ipairs(q.ziele) do
@@ -492,6 +571,11 @@ function T:Aktualisieren()
               end
             end
           end
+          for _, extra in ipairs(QK:Rufe("zeilen", q)) do
+            local zz, hz = Zeile("ziel", extra[1], extra[2] or QK.farben.grau, q, y)
+            zz.tipp = extra[3]
+            y = y - hz
+          end
           y = y - 5
         end
       end
@@ -503,6 +587,12 @@ function T:Aktualisieren()
     end
   end
   rahmen:SetHeight(-y + 6)
+  -- Mouseover-Modus: bei Änderungen kurz einblenden
+  local teile = {}
+  for i = 1, benutzt do teile[i] = zeilen[i].text:GetText() or "" end
+  local neueSignatur = table.concat(teile, "\1")
+  if signatur and neueSignatur ~= signatur then sichtbarBis = GetTime() + (db.wenigerBewegung and 10 or 5) end
+  signatur = neueSignatur
   T:Kompass()
   T:Gegenstaende()
   if QK.Pfeil then QK.Pfeil:Aktualisieren() end
@@ -529,7 +619,7 @@ function T:Kompass()
       local d = QK.Compat:Entfernung(z.quest.id) or e
       z.rechts:SetText(d and QK:EntfernungText(d) or "")
     elseif z.zeitEnde then
-      z.text:SetText("Zeit: " .. QK:DauerText(z.zeitEnde - jetzt))
+      z.text:SetText(L"Zeit: " .. QK:DauerText(z.zeitEnde - jetzt))
     end
   end
 end
@@ -655,8 +745,15 @@ function T:BlizzardTracker()
   end
 end
 
-function T:Ruhe(imKampf)
-  rahmen:SetAlpha((imKampf and QK.db.ruhemodus) and QK.db.ruheAlpha or 1)
+-- Deckkraft der Liste aus Ruhemodus (Kampf) und Mouseover-Modus
+function T:Ruhe(kampf)
+  if kampf ~= nil then imKampf = kampf end
+  local alpha = (imKampf and QK.db.ruhemodus) and QK.db.ruheAlpha or 1
+  if QK.db.mouseover and not rahmen:IsMouseOver() and GetTime() > sichtbarBis
+    and not (menue and menue:IsShown()) then
+    alpha = 0
+  end
+  if rahmen:GetAlpha() ~= alpha then rahmen:SetAlpha(alpha) end
 end
 
 function T:Anwenden()
@@ -735,10 +832,10 @@ function T:Start()
   kopf:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("Questkompass", unpack(QK.farben.gold))
-    GameTooltip:AddLine("Klick: ein- oder ausklappen", 0.8, 0.8, 0.8)
-    if not QK.db.gesperrt then GameTooltip:AddLine("Ziehen: verschieben", 0.8, 0.8, 0.8) end
-    GameTooltip:AddLine("Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Mausrad über der Liste: blättern", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(L"Klick: ein- oder ausklappen", 0.8, 0.8, 0.8)
+    if not QK.db.gesperrt then GameTooltip:AddLine(L"Ziehen: verschieben", 0.8, 0.8, 0.8) end
+    GameTooltip:AddLine(L"Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L"Mausrad über der Liste: blättern", 0.6, 0.6, 0.6)
     GameTooltip:Show()
   end)
   kopf:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -749,10 +846,10 @@ function T:Start()
   zaehler = kopf:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
   zaehler:SetPoint("RIGHT", -4, -1)
 
-  local zahnrad = KopfKnopf("Interface\\Icons\\Trade_Engineering", { "Einstellungen", "Stil, Lage und Extras ändern" },
+  local zahnrad = KopfKnopf("Interface\\Icons\\Trade_Engineering", { L"Einstellungen", L"Stil, Lage und Extras ändern" },
     function() QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true) end)
   zahnrad:SetPoint("TOPRIGHT", -6, -2)
-  local karte = KopfKnopf("Interface\\Icons\\INV_Misc_Map_01", { "Questbuch", "Gebiet, Welt, Suche und Tagebuch" },
+  local karte = KopfKnopf("Interface\\Icons\\INV_Misc_Map_01", { L"Questbuch", L"Gebiet, Welt, Suche und Tagebuch" },
     function() QK.Gebiet:Umschalten() end)
   karte:SetPoint("RIGHT", zahnrad, "LEFT", -4, 0)
 
@@ -762,6 +859,7 @@ function T:Start()
     if takt > 0.1 then
       takt = 0
       QK:Sicher("Kompass", T.Kompass, T)
+      T:Ruhe()
     end
     if sortTakt > 3 then
       sortTakt = 0
@@ -779,9 +877,10 @@ function T:Start()
     if id then neu[id] = GetTime() end
     T:Planen()
   end)
-  QK:Ereignis("PLAYER_REGEN_DISABLED", function() T:Ruhe(true) end)
+  QK:Ereignis("PLAYER_REGEN_DISABLED", function() T:Ruhe(true); if QK.db.kampfNurFokus then T:Planen() end end)
   QK:Ereignis("PLAYER_REGEN_ENABLED", function()
     T:Ruhe(false)
+    if QK.db.kampfNurFokus then T:Planen() end
     T:BlizzardTracker()
     if gegenstaendeOffen then T:Gegenstaende() end
   end)

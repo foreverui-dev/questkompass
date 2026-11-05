@@ -3,6 +3,7 @@
 -- (GetQuestLogTitle usw.). Alles im Addon fragt nur hier nach.
 local _, QK = ...
 local C = QK:Modul("Compat")
+local L = QK.L
 
 local CQ = C_QuestLog or {}
 C.modern = CQ.GetInfo ~= nil and CQ.GetNumQuestLogEntries ~= nil
@@ -70,7 +71,7 @@ function C:Questlog()
           local ziele = zieleModern(id)
           local fertig = CQ.IsComplete and CQ.IsComplete(id) or false
           quests[#quests + 1] = {
-            index = i, id = id, titel = info.title or ("Quest " .. id),
+            index = i, id = id, titel = info.title or (L"Quest " .. id),
             stufe = info.level, gruppe = info.suggestedGroup,
             haeufigkeit = info.frequency,
             zone = zone,
@@ -188,6 +189,59 @@ function C:QuestLink(q)
   return GetQuestLink(C.modern and q.id or q.index)
 end
 
+-- Goldbelohnung in Kupfer (ohne die Auswahl im Questlog dauerhaft zu ändern)
+function C:Gold(q)
+  if not GetQuestLogRewardMoney then return nil end
+  if C.modern then
+    local ok, geld = pcall(GetQuestLogRewardMoney, q.id)
+    return ok and geld or nil
+  end
+  if not SelectQuestLogEntry then return nil end
+  local vorher = GetQuestLogSelection and GetQuestLogSelection()
+  SelectQuestLogEntry(q.index)
+  local ok, geld = pcall(GetQuestLogRewardMoney)
+  if vorher and vorher > 0 then SelectQuestLogEntry(vorher) end
+  return ok and geld or nil
+end
+
+-- Quest abbrechen (nur nach Bestätigung durch den Spieler aufrufen)
+function C:Abbrechen(q)
+  if C.modern and CQ.SetAbandonQuest then
+    if CQ.SetSelectedQuest then CQ.SetSelectedQuest(q.id) end
+    CQ.SetAbandonQuest()
+    CQ.AbandonQuest()
+  elseif SetAbandonQuest then
+    local index = q.index
+    for _, x in ipairs(C:Questlog()) do if x.id == q.id then index = x.index end end
+    SelectQuestLogEntry(index)
+    SetAbandonQuest()
+    AbandonQuest()
+  end
+end
+
+-- Alle erledigten Quest-IDs als Menge { [id] = true }
+function C:Erledigte()
+  local menge = {}
+  if CQ.GetAllCompletedQuestIDs then
+    local ok, liste = pcall(CQ.GetAllCompletedQuestIDs)
+    if ok and type(liste) == "table" and #liste > 0 then
+      for _, id in ipairs(liste) do menge[id] = true end
+      return menge
+    end
+  end
+  if GetQuestsCompleted then
+    local ok, t = pcall(GetQuestsCompleted)
+    if ok and type(t) == "table" and next(t) then
+      for id, an in pairs(t) do if an then menge[id] = true end end
+      return menge
+    end
+  end
+  for id in pairs(QK.quests or {}) do
+    if C:IstErledigt(id) then menge[id] = true end
+  end
+  return menge
+end
+
 function C:Teilen(q)
   if CQ.SetSelectedQuest then CQ.SetSelectedQuest(q.id) elseif SelectQuestLogEntry then SelectQuestLogEntry(q.index) end
   if QuestLogPushQuest then QuestLogPushQuest() end
@@ -255,10 +309,10 @@ function C:Diagnose(ausgeben)
   for _, pfad in ipairs(PRUEFEN) do d.api[pfad] = vorhanden(pfad) end
   QK.root.diagnose = d
   if ausgeben then
-    QK:Meldung("Client %s (%s), Interface %s, %s Quest-API, Addon %s",
+    QK:Meldung(L"Client %s (%s), Interface %s, %s Quest-API, Addon %s",
       tostring(version), tostring(build), tostring(interface), C.modern and "moderne" or "klassische", QK.version)
     local fehlt = {}
     for _, pfad in ipairs(PRUEFEN) do if not d.api[pfad] then fehlt[#fehlt + 1] = pfad end end
-    DEFAULT_CHAT_FRAME:AddMessage("  Fehlt: " .. (#fehlt > 0 and table.concat(fehlt, ", ") or "nichts"))
+    DEFAULT_CHAT_FRAME:AddMessage(L"  Fehlt: " .. (#fehlt > 0 and table.concat(fehlt, ", ") or "nichts"))
   end
 end

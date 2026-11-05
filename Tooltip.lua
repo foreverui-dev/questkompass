@@ -1,6 +1,7 @@
 -- Questkompass: zusätzliche Zeilen in Quest-Tooltips (Chat-Links, Zielliste, Gebietsfenster).
 local _, QK = ...
 local TT = QK:Modul("Tooltip")
+local L = QK.L
 
 -- Fügt Gebiet, Typ, Erfahrung und Ruf zu einem Tooltip hinzu.
 -- ohneTitel: true, wenn der Aufrufer den Questnamen schon gesetzt hat.
@@ -10,9 +11,9 @@ function TT:Ergaenzen(tooltip, questID, ohneTitel)
   if not ohneTitel and q.name then tooltip:AddLine(q.name, unpack(QK.farben.gold)) end
   local r, g, b = 0.85, 0.85, 0.85
   if q.gebiet and QK:GebietName(q.gebiet) then
-    tooltip:AddDoubleLine("Gebiet", QK:GebietName(q.gebiet), 0.6, 0.6, 0.6, r, g, b)
+    tooltip:AddDoubleLine(L"Gebiet", QK:GebietName(q.gebiet), 0.6, 0.6, 0.6, r, g, b)
   elseif q.kategorie and QK.kategorien[q.kategorie] then
-    tooltip:AddDoubleLine("Kategorie", QK.Lokal(QK.kategorien[q.kategorie]), 0.6, 0.6, 0.6, r, g, b)
+    tooltip:AddDoubleLine(L"Kategorie", QK.Lokal(QK.kategorien[q.kategorie]), 0.6, 0.6, 0.6, r, g, b)
   end
   if q.typ then
     tooltip:AddDoubleLine("Typ", QK:TypName(q.typ), 0.6, 0.6, 0.6, 0.85, 0.55, 0.25)
@@ -21,7 +22,7 @@ function TT:Ergaenzen(tooltip, questID, ohneTitel)
     tooltip:AddDoubleLine("Fraktion", q.fraktion == "A" and "Allianz" or "Horde", 0.6, 0.6, 0.6, r, g, b)
   end
   local ep = QK:EPText(q.ep)
-  if ep then tooltip:AddDoubleLine("Erfahrung", ep, 0.6, 0.6, 0.6, r, g, b) end
+  if ep then tooltip:AddDoubleLine(L"Erfahrung", ep, 0.6, 0.6, 0.6, r, g, b) end
   if q.ruf then
     for i = 1, #q.ruf, 2 do
       tooltip:AddDoubleLine(i == 1 and "Ruf" or " ", ("+%d %s"):format(q.ruf[i + 1], QK:FraktionName(q.ruf[i])),
@@ -29,8 +30,9 @@ function TT:Ergaenzen(tooltip, questID, ohneTitel)
     end
   end
   if QK.Compat:IstErledigt(questID) then
-    tooltip:AddLine("Bereits erledigt", 0.45, 0.85, 0.45)
+    tooltip:AddLine(L"Bereits erledigt", unpack(QK.farben.gruen))
   end
+  QK:Rufe("tooltip", tooltip, questID)
   return true
 end
 

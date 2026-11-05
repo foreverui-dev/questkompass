@@ -3,6 +3,7 @@
 -- Suche: alle Quests nach Namen. Tagebuch: abgegebene Quests und Sitzungsstatistik.
 local _, QK = ...
 local G = QK:Modul("Gebiet")
+local L = QK.L
 
 local ZEILE = 16
 local HAKEN = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12:0:0|t"
@@ -19,9 +20,19 @@ local suchFeld, suchText = nil, ""
 local gebietTitel, gebietUnter, gebietBalken, gebietBalkenText
 local weltTitel, weltBalken, weltBalkenText
 local buchStatistik
+local auswahl = 0           -- Gamepad/Tastatur: markierte Zeile
+
+-- Reiter; weitere Dateien hängen mit G:ReiterHinzufuegen eigene an (Planer, Erfolge).
+local REITER = { { "gebiet", L"Gebiet" }, { "welt", L"Welt" }, { "suche", L"Suche" }, { "tagebuch", L"Tagebuch" } }
+local AUFBAU, KOPFBAU = {}, {}
+function G:ReiterHinzufuegen(id, titel, aufbau, kopfBauen)
+  REITER[#REITER + 1] = { id, titel }
+  AUFBAU[id], KOPFBAU[id] = aufbau, kopfBauen
+end
 
 -- Sitzung
 local sitzung = { start = nil, quests = 0, ep = 0 }
+G.sitzung = sitzung
 local letzteXP, letzteMax
 
 ---------------------------------------------------------------------------
@@ -127,12 +138,22 @@ local function NeueZeile()
   z.hl = z:CreateTexture(nil, "HIGHLIGHT")
   z.hl:SetAllPoints()
   z.hl:SetColorTexture(1, 1, 1, 0.06)
+  z.wahl = z:CreateTexture(nil, "BORDER")
+  z.wahl:SetAllPoints()
+  z.wahl:Hide()
   z:SetScript("OnEnter", function(self)
     local q = self.quest
+    if not q and self.tipp then
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(self.tipp[1], unpack(QK.farben.gold))
+      for i = 2, #self.tipp do GameTooltip:AddLine(self.tipp[i], 0.85, 0.85, 0.85, true) end
+      GameTooltip:Show()
+      return
+    end
     if not q then return end
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:AddLine(q.name or ("Quest " .. q.id), unpack(QK.farben.gold))
-    GameTooltip:AddLine(({ "Steht in deinem Questlog", "Noch nicht gemacht", "Erledigt" })[q.status] or "", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(q.name or (L"Quest " .. q.id), unpack(QK.farben.gold))
+    GameTooltip:AddLine(({ L"Steht in deinem Questlog", L"Noch nicht gemacht", L"Erledigt" })[q.status] or "", 0.8, 0.8, 0.8)
     QK.Tooltip:Ergaenzen(GameTooltip, q.id, true)
     GameTooltip:Show()
   end)
@@ -153,7 +174,7 @@ local function Zeichnen(eintraege)
     z.text:SetText(e.text or "")
     z.text:SetTextColor(unpack(e.farbe or QK.farben.hell))
     z.rechts:SetText(e.rechts or "")
-    z.quest, z.klick = e.quest, e.klick
+    z.quest, z.klick, z.tipp = e.quest, e.klick, e.tipp
     if e.anteil and e.anteil > 0 then
       z.balken:SetWidth(math.max(1, (inhalt:GetWidth() or 300) * e.anteil))
       z.balken:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.12)
@@ -165,11 +186,54 @@ local function Zeichnen(eintraege)
   end
   inhalt:SetHeight(math.max(1, #eintraege * ZEILE))
   if scroll.SetVerticalScroll then scroll:SetVerticalScroll(0) end
+  G.anzahl = #eintraege
+  if auswahl > #eintraege then auswahl = 0 end
+  G:AuswahlZeigen()
 end
+G.Zeichnen = Zeichnen
+
+-- Gamepad und Tastatur: Zeile markieren, auslösen, Reiter wechseln
+function G:AuswahlZeigen(sprechen)
+  for i, z in ipairs(zeilen) do
+    local an = i == auswahl and z:IsShown()
+    z.wahl:SetShown(an)
+    if an then
+      z.wahl:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.22)
+      local oben = (i - 1) * ZEILE
+      local sicht = scroll:GetHeight() or 300
+      local jetzt = scroll.GetVerticalScroll and scroll:GetVerticalScroll() or 0
+      if oben < jetzt then scroll:SetVerticalScroll(oben)
+      elseif oben + ZEILE > jetzt + sicht then scroll:SetVerticalScroll(oben + ZEILE - sicht) end
+      local q = z.quest
+      if sprechen then QK:Sprechen(z.text:GetText() .. ((q and q.status) and (". " .. ({ L"im Log", L"offen", L"erledigt" })[q.status]) or "")) end
+    end
+  end
+end
+
+function G:Bewegen(schritt)
+  if not G.anzahl or G.anzahl == 0 then return end
+  auswahl = auswahl + schritt
+  if auswahl < 1 then auswahl = G.anzahl elseif auswahl > G.anzahl then auswahl = 1 end
+  G:AuswahlZeigen(true)
+end
+
+function G:Ausloesen()
+  local z = zeilen[auswahl]
+  if z and z:IsShown() and z.klick then z.klick() end
+end
+
+function G:ReiterWechseln(schritt)
+  local pos = 1
+  for i, r in ipairs(REITER) do if r[1] == reiter then pos = i end end
+  pos = ((pos - 1 + schritt) % #REITER) + 1
+  G:Reiter(REITER[pos][1])
+end
+
+function G:Fenster() return fenster end
 
 local function QuestEintrag(q, mitGebiet)
   local typ = QK:TypName(q.typ)
-  local text = (q.name or ("Quest " .. q.id)) .. (typ and (" |cffd98c40(" .. typ .. ")|r") or "")
+  local text = (q.name or (L"Quest " .. q.id)) .. (typ and (" |cffd98c40(" .. typ .. ")|r") or "")
   if mitGebiet and q.gebiet then text = text .. " |cff8c8c8c· " .. (QK:GebietName(q.gebiet) or "") .. "|r" end
   local e = { text = text, rechts = QK:EPText(q.ep) or "", quest = q }
   if q.status == 1 then e.symbol, e.farbe = IM_LOG, QK.farben.gold
@@ -177,22 +241,25 @@ local function QuestEintrag(q, mitGebiet)
   else e.symbol, e.farbe = HAKEN, QK.farben.grau end
   -- Status zusätzlich als Wort, damit er nicht nur an Farbe und Symbol hängt
   if QK.db.farbenblind or QK.db.kontrast then
-    e.text = e.text .. "  |cffbfbfbf(" .. ({ "im Log", "offen", "erledigt" })[q.status] .. ")|r"
+    e.text = e.text .. "  |cffbfbfbf(" .. ({ L"im Log", L"offen", L"erledigt" })[q.status] .. ")|r"
+  end
+  if q.status == 2 and QK.Twinks then
+    local andere = QK.Twinks:Andere(q.id)
+    if #andere > 0 then e.text = e.text .. " |cff7fbfff(" .. L"Twink" .. ")|r" end
   end
   if mitGebiet and q.gebiet then e.klick = function() G:GebietWaehlen(q.gebiet) end end
   return e
 end
+G.QuestEintrag = QuestEintrag
 
 ---------------------------------------------------------------------------
 -- Reiter
 ---------------------------------------------------------------------------
-local AUFBAU = {}
-
 function AUFBAU.gebiet()
   if folgen or not gebietID then gebietID = QK:AktuellesGebiet() or gebietID end
   if not gebietID then
-    gebietTitel:SetText("Unbekanntes Gebiet")
-    gebietUnter:SetText("Keine Questdaten für diese Zone. Mit den Pfeilen wählst du ein Gebiet.")
+    gebietTitel:SetText(L"Unbekanntes Gebiet")
+    gebietUnter:SetText(L"Keine Questdaten für diese Zone. Mit den Pfeilen wählst du ein Gebiet.")
     gebietBalken:SetMinMaxValues(0, 1); gebietBalken:SetValue(0)
     gebietBalkenText:SetText("")
     Zeichnen({})
@@ -207,12 +274,12 @@ function AUFBAU.gebiet()
   end
   Zeichnen(eintraege)
   gebietTitel:SetText(QK:GebietName(gebietID))
-  gebietUnter:SetText(("%d im Log · %d offen%s"):format(anzahl[1], anzahl[2],
-    epOffen > 0 and (" · noch " .. QK:EPText(epOffen)) or ""))
+  gebietUnter:SetText((L"%d im Log · %d offen%s"):format(anzahl[1], anzahl[2],
+    epOffen > 0 and (L" · noch " .. QK:EPText(epOffen)) or ""))
   gebietBalken:SetMinMaxValues(0, math.max(1, #liste))
   gebietBalken:SetValue(anzahl[3])
   gebietBalken:SetStatusBarColor(unpack(QK.farben.balken))
-  gebietBalkenText:SetText(("%d von %d erledigt"):format(anzahl[3], #liste))
+  gebietBalkenText:SetText((L"%d von %d erledigt"):format(anzahl[3], #liste))
 end
 
 function AUFBAU.welt()
@@ -234,16 +301,16 @@ function AUFBAU.welt()
   weltBalken:SetMinMaxValues(0, math.max(1, gesamt))
   weltBalken:SetValue(erledigt)
   weltBalken:SetStatusBarColor(unpack(QK.farben.balken))
-  weltBalkenText:SetText(("%d von %d Quests in %d Gebieten"):format(erledigt, gesamt, #weltCache))
+  weltBalkenText:SetText((L"%d von %d Quests in %d Gebieten"):format(erledigt, gesamt, #weltCache))
 end
 
 function AUFBAU.suche()
   local eintraege = {}
   if #suchText >= 3 then
     for _, q in ipairs(G:Suchen(suchText)) do eintraege[#eintraege + 1] = QuestEintrag(q, true) end
-    if #eintraege == 0 then eintraege[1] = { text = "Nichts gefunden.", farbe = QK.farben.grau } end
+    if #eintraege == 0 then eintraege[1] = { text = L"Nichts gefunden.", farbe = QK.farben.grau } end
   else
-    eintraege[1] = { text = "Mindestens drei Buchstaben eingeben, deutsch oder englisch.", farbe = QK.farben.grau }
+    eintraege[1] = { text = L"Mindestens drei Buchstaben eingeben, deutsch oder englisch.", farbe = QK.farben.grau }
   end
   Zeichnen(eintraege)
 end
@@ -257,18 +324,18 @@ function AUFBAU.tagebuch()
     local tag = date("%d.%m.", e.zeit)
     eintraege[#eintraege + 1] = {
       symbol = HAKEN,
-      text = (tag == heute and date("%H:%M", e.zeit) or tag) .. "  " .. (e.name or ("Quest " .. e.id)),
+      text = (tag == heute and date("%H:%M", e.zeit) or tag) .. "  " .. (e.name or (L"Quest " .. e.id)),
       rechts = QK:EPText(e.ep) or "",
       quest = QK:Quest(e.id) and (function() local q = QK:Quest(e.id); q.status = 3; return q end)() or nil,
     }
   end
-  if #eintraege == 0 then eintraege[1] = { text = "Noch keine Quest abgegeben, seit Questkompass läuft.", farbe = QK.farben.grau } end
+  if #eintraege == 0 then eintraege[1] = { text = L"Noch keine Quest abgegeben, seit Questkompass läuft.", farbe = QK.farben.grau } end
   Zeichnen(eintraege)
   local dauer = sitzung.start and (GetTime() - sitzung.start) or 0
   local proStunde = dauer > 120 and math.floor(sitzung.ep / dauer * 3600) or nil
-  buchStatistik:SetText(("Diese Sitzung: %d Quests · %s%s\nInsgesamt im Tagebuch: %d Quests"):format(
+  buchStatistik:SetText((L"Diese Sitzung: %d Quests · %s%s\nInsgesamt im Tagebuch: %d Quests"):format(
     sitzung.quests, QK:EPText(sitzung.ep) or "0 EP",
-    proStunde and (" · " .. (BreakUpLargeNumbers and BreakUpLargeNumbers(proStunde) or proStunde) .. " EP pro Stunde") or "",
+    proStunde and (" · " .. (BreakUpLargeNumbers and BreakUpLargeNumbers(proStunde) or proStunde) .. L" EP pro Stunde") or "",
     #buch))
 end
 
@@ -282,6 +349,7 @@ function G:Aktualisieren()
     b.strich:SetShown(name == reiter)
     b.strich:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 1)
   end
+  if not AUFBAU[reiter] then reiter = "gebiet" end
   AUFBAU[reiter]()
 end
 
@@ -327,7 +395,7 @@ local function Balken(eltern, y)
   return b, t
 end
 
-local function KopfBereich(name)
+function G.KopfBereich(name)
   local k = CreateFrame("Frame", nil, fenster)
   k:SetPoint("TOPLEFT", 14, -62)
   k:SetPoint("TOPRIGHT", -14, -62)
@@ -339,7 +407,7 @@ end
 
 local function Erstellen()
   fenster = CreateFrame("Frame", "QuestkompassGebiet", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-  fenster:SetSize(380, 500)
+  fenster:SetSize(460, 520)
   fenster:SetFrameStrata("DIALOG")
   fenster:SetClampedToScreen(true)
   fenster:SetMovable(true)
@@ -367,11 +435,11 @@ local function Erstellen()
 
   -- Reiter
   local x = 14
-  for _, r in ipairs({ { "gebiet", "Gebiet" }, { "welt", "Welt" }, { "suche", "Suche" }, { "tagebuch", "Tagebuch" } }) do
+  for _, r in ipairs(REITER) do
     local b = CreateFrame("Button", nil, fenster)
     b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     b.text:SetPoint("LEFT")
-    b.text:SetText(r[2])
+    b.text:SetText(L(r[2]))
     b:SetSize((b.text:GetStringWidth() or 50) + 4, 22)
     b:SetPoint("TOPLEFT", x, -30)
     b.strich = b:CreateTexture(nil, "ARTWORK")
@@ -380,16 +448,20 @@ local function Erstellen()
     b.strich:SetHeight(2)
     b:SetScript("OnClick", function()
       reiter = r[1]
+      auswahl = 0
       if r[1] == "welt" then weltCache = nil end
       G:Aktualisieren()
       if r[1] == "suche" and suchFeld then suchFeld:SetFocus() end
     end)
     reiterKnoepfe[r[1]] = b
-    x = x + (b.text:GetStringWidth() or 50) + 22
+    x = x + (b.text:GetStringWidth() or 50) + 18
+  end
+  for _, r in ipairs(REITER) do
+    if KOPFBAU[r[1]] then KOPFBAU[r[1]](G.KopfBereich(r[1])) end
   end
 
   -- Kopf: Gebiet
-  local kg = KopfBereich("gebiet")
+  local kg = G.KopfBereich("gebiet")
   gebietTitel = kg:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
   gebietTitel:SetPoint("TOPLEFT", 0, 0)
   gebietTitel:SetPoint("RIGHT", -90, 0)
@@ -397,7 +469,7 @@ local function Erstellen()
   gebietTitel:SetWordWrap(false)
   local zurueck = Knopf(kg, "<", 24, function() Blaettern(-1) end)
   zurueck:SetPoint("TOPRIGHT", -62, 2)
-  local hier = Knopf(kg, "Hier", 34, function()
+  local hier = Knopf(kg, L"Hier", 34, function()
     local liste = QK:GebieteHier()
     local pos = 0
     for i, id in ipairs(liste) do if id == gebietID then pos = i end end
@@ -408,8 +480,8 @@ local function Erstellen()
   hier:SetPoint("LEFT", zurueck, "RIGHT", 2, 0)
   hier:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:AddLine("Gebiete hier", unpack(QK.farben.gold))
-    GameTooltip:AddLine("Mehrfach klicken wechselt zwischen Zone, Teilgebiet und den Gebieten deiner Quests.", 0.8, 0.8, 0.8, true)
+    GameTooltip:AddLine(L"Gebiete hier", unpack(QK.farben.gold))
+    GameTooltip:AddLine(L"Mehrfach klicken wechselt zwischen Zone, Teilgebiet und den Gebieten deiner Quests.", 0.8, 0.8, 0.8, true)
     GameTooltip:Show()
   end)
   hier:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -422,20 +494,20 @@ local function Erstellen()
   gebietBalken, gebietBalkenText = Balken(kg, -46)
 
   -- Kopf: Welt
-  local kw = KopfBereich("welt")
+  local kw = G.KopfBereich("welt")
   weltTitel = kw:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
   weltTitel:SetPoint("TOPLEFT")
-  weltTitel:SetText("Weltfortschritt")
+  weltTitel:SetText(L"Weltfortschritt")
   local wu = kw:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
   wu:SetPoint("TOPLEFT", weltTitel, "BOTTOMLEFT", 0, -4)
-  wu:SetText("Klick auf ein Gebiet öffnet seine Quests.")
+  wu:SetText(L"Klick auf ein Gebiet öffnet seine Quests.")
   weltBalken, weltBalkenText = Balken(kw, -46)
 
   -- Kopf: Suche
-  local ks = KopfBereich("suche")
+  local ks = G.KopfBereich("suche")
   local st = ks:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
   st:SetPoint("TOPLEFT")
-  st:SetText("Quest suchen")
+  st:SetText(L"Quest suchen")
   suchFeld = CreateFrame("EditBox", "QuestkompassSuche", ks, "InputBoxTemplate")
   suchFeld:SetAutoFocus(false)
   suchFeld:SetHeight(22)
@@ -449,10 +521,10 @@ local function Erstellen()
   suchFeld:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
 
   -- Kopf: Tagebuch
-  local kt = KopfBereich("tagebuch")
+  local kt = G.KopfBereich("tagebuch")
   local tt = kt:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
   tt:SetPoint("TOPLEFT")
-  tt:SetText("Questtagebuch")
+  tt:SetText(L"Questtagebuch")
   buchStatistik = kt:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   buchStatistik:SetPoint("TOPLEFT", tt, "BOTTOMLEFT", 0, -6)
   buchStatistik:SetPoint("RIGHT", 0, 0)
@@ -463,7 +535,7 @@ local function Erstellen()
   scroll:SetPoint("TOPLEFT", 10, -132)
   scroll:SetPoint("BOTTOMRIGHT", -30, 30)
   inhalt = CreateFrame("Frame", nil, scroll)
-  inhalt:SetSize(330, 1)
+  inhalt:SetSize(410, 1)
   scroll:SetScrollChild(inhalt)
   scroll:SetScript("OnSizeChanged", function(_, w) inhalt:SetWidth(w) end)
 
@@ -471,7 +543,7 @@ local function Erstellen()
   fuss:SetPoint("BOTTOMLEFT", 14, 10)
   fuss:SetPoint("BOTTOMRIGHT", -14, 10)
   fuss:SetJustifyH("LEFT")
-  fuss:SetText(("Daten: Blizzard Entertainment, Stand %s · foreverui.de"):format(QK.datenStand or "?"))
+  fuss:SetText((L"Daten: Blizzard Entertainment, Stand %s · foreverui.de"):format(QK.datenStand or "?"))
 
   fenster:SetScript("OnShow", function() QK:Sicher("Questbuch", G.Aktualisieren, G) end)
   fenster:Hide()
@@ -482,7 +554,7 @@ function G:Zeigen(name)
   if name then
     local id = QK:GebietZuName(name)
     if not id then
-      QK:Meldung("kein Gebiet namens „%s“ gefunden.", name)
+      QK:Meldung(L"kein Gebiet namens „%s“ gefunden.", name)
       return
     end
     gebietID, folgen = id, id == QK:AktuellesGebiet()
@@ -496,6 +568,7 @@ end
 
 function G:Reiter(name, text)
   if not fenster then Erstellen() end
+  if reiter ~= name then auswahl = 0 end
   reiter = name
   if name == "welt" then weltCache = nil end
   if name == "suche" and text and text ~= "" then suchFeld:SetText(text); suchText = text end

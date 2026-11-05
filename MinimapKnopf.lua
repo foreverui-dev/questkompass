@@ -1,6 +1,7 @@
 -- Questkompass: Knopf am Rand der Minikarte.
 local _, QK = ...
 local MK = QK:Modul("MinimapKnopf")
+local L = QK.L
 local knopf
 
 local function Platzieren()
@@ -57,10 +58,10 @@ function MK:Start()
   knopf:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("Questkompass", unpack(QK.farben.gold))
-    GameTooltip:AddLine("Klick: Liste ein- oder ausblenden", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Umschalt+Klick: Questbuch", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Ziehen: Knopf verschieben", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(L"Klick: Liste ein- oder ausblenden", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L"Umschalt+Klick: Questbuch", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L"Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L"Ziehen: Knopf verschieben", 0.6, 0.6, 0.6)
     GameTooltip:Show()
   end)
   knopf:SetScript("OnLeave", function() GameTooltip:Hide() end)

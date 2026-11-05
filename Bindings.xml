@@ -8,8 +8,17 @@
   <Binding name="QUESTKOMPASS_WEITER" category="ADDONS">
     Questkompass:Taste("weiter")
   </Binding>
+  <Binding name="QUESTKOMPASS_ZURUECK" category="ADDONS">
+    Questkompass:Taste("zurueck")
+  </Binding>
+  <Binding name="QUESTKOMPASS_ROUTE" category="ADDONS">
+    Questkompass:Taste("route")
+  </Binding>
   <Binding name="QUESTKOMPASS_BUCH" category="ADDONS">
     Questkompass:Taste("buch")
+  </Binding>
+  <Binding name="QUESTKOMPASS_PLANER" category="ADDONS">
+    Questkompass:Taste("planer")
   </Binding>
   <Binding name="QUESTKOMPASS_EINSTELLUNGEN" category="ADDONS">
     Questkompass:Taste("einstellungen")

@@ -1,6 +1,7 @@
 -- Questkompass: großer, frei schwebender Pfeil zur Fokus-Quest, wie ein Navi.
 local _, QK = ...
 local P = QK:Modul("Pfeil")
+local L = QK.L
 local rahmen, pfeil, titel, info
 
 local function Farbe(winkel)
@@ -18,10 +19,10 @@ end
 -- Richtung in Worten, z. B. für Farbenblind- und Kontrastmodus
 local function Richtungswort(winkel)
   local grad = math.deg(((winkel + math.pi) % (2 * math.pi)) - math.pi)
-  if math.abs(grad) < 25 then return "geradeaus" end
-  if math.abs(grad) > 150 then return "hinter dir" end
-  if grad > 0 then return grad < 80 and "halb rechts" or "rechts" end
-  return grad > -80 and "halb links" or "links"
+  if math.abs(grad) < 25 then return L"geradeaus" end
+  if math.abs(grad) > 150 then return L"hinter dir" end
+  if grad > 0 then return grad < 80 and L"halb rechts" or L"rechts" end
+  return grad > -80 and L"halb links" or L"links"
 end
 
 local function Erstellen()
@@ -39,14 +40,15 @@ local function Erstellen()
     QK.db.pfeilPos = { p, rp, x, y }
   end)
   rahmen:SetScript("OnClick", function()
+    if rahmen.wegpunkt then QK.Navigation:WegpunktLoeschen() return end
     QK.Compat:FokusSetzen(nil)
     QK:Anwenden()
   end)
   rahmen:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-    GameTooltip:AddLine("Fokuspfeil", unpack(QK.farben.gold))
-    GameTooltip:AddLine("Ziehen: verschieben", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Rechtsklick: Fokus aufheben", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L"Fokuspfeil", unpack(QK.farben.gold))
+    GameTooltip:AddLine(L"Ziehen: verschieben", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(rahmen.wegpunkt and L"Rechtsklick: Wegpunkt löschen" or L"Rechtsklick: Fokus aufheben", 0.8, 0.8, 0.8)
     GameTooltip:Show()
   end)
   rahmen:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -73,11 +75,19 @@ local function Erstellen()
 end
 
 function P:Drehen()
-  local id = rahmen.questID
-  if not id then return end
+  local id, wp = rahmen.questID, rahmen.wegpunkt
+  if not id and not wp then return end
   QK.Kompass:Auffrischen(GetTime())
-  local winkel, e = QK.Kompass:Richtung(id)
-  local d = QK.Compat:Entfernung(id) or e
+  local winkel, d
+  if wp then
+    local x, y = QK.Navigation:WegpunktHier()
+    if x then winkel, d = QK.Kompass:RichtungZuPunkt(x, y) end
+    if d and d < 8 then QK.Navigation:WegpunktLoeschen(true) return end
+  else
+    local e
+    winkel, e = QK.Kompass:Richtung(id)
+    d = QK.Compat:Entfernung(id) or e
+  end
   if winkel then
     pfeil:SetRotation(-winkel)
     pfeil:SetVertexColor(Farbe(winkel))
@@ -86,8 +96,8 @@ function P:Drehen()
     pfeil:Hide()
   end
   if d and d < 8 then
-    info:SetText(QK.gold .. "Am Ziel|r")
-    if not rahmen.angekommen then rahmen.angekommen = true; QK:Sprechen("Am Ziel.") end
+    info:SetText(QK.gold .. L"Am Ziel|r")
+    if not rahmen.angekommen then rahmen.angekommen = true; QK:Sprechen(L"Am Ziel.") end
   elseif d then
     if d > 20 then rahmen.angekommen = false end
     local tempo = GetUnitSpeed and GetUnitSpeed("player") or 0
@@ -96,12 +106,22 @@ function P:Drehen()
     if winkel and (QK.db.farbenblind or QK.db.kontrast) then text = text .. "  ·  " .. Richtungswort(winkel) end
     info:SetText(text)
   else
-    info:SetText("|cff8c8c8cZiel nicht auf dieser Karte|r")
+    info:SetText(L"|cff8c8c8cZiel nicht auf dieser Karte|r")
   end
 end
 
 function P:Aktualisieren()
   if not rahmen then return end
+  local wp = QK.db.pfeilGross and QK.Navigation and QK.Navigation:Wegpunkt()
+  rahmen.wegpunkt = wp or nil
+  if wp then
+    rahmen.questID = nil
+    titel:SetText(wp.name or L"Wegpunkt")
+    titel:SetTextColor(unpack(QK.farben.gold))
+    rahmen:Show()
+    P:Drehen()
+    return
+  end
   local id = QK.db.pfeilGross and QK.Compat:Fokus()
   local q
   if id then
