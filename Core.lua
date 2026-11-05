@@ -53,7 +53,16 @@ QK.STANDARD = {
   logWarnung = true,
   gruppenMeldungen = false,
   neuMarkierung = true,
+  -- 0.4 Barrierefreiheit
+  vorlesen = false,         -- Sprachausgabe des Spiels
+  kontrast = false,
+  farbenblind = false,
+  allesGroesser = false,    -- Fenster, Pfeil und Meldungen um 25 % größer
+  wenigerBewegung = false,
 }
+
+-- Seite, mit der das Einstellungsfenster öffnet (1 = Willkommen, 2 = Barrierefreiheit)
+QK.SEITE_EINSTELLUNGEN = 3
 
 QK.AKZENTE = {
   gold    = { "Gold", 0.95, 0.77, 0.35 },
@@ -76,6 +85,107 @@ function QK:AkzentAnwenden()
   local bl = self.farben.balken
   bl[1], bl[2], bl[3] = r, g * 0.92, b * 0.75
   self.gold = ("|cff%02x%02x%02x"):format(r * 255, g * 255, b * 255)
+  self:BarrierefreiAnwenden()
+end
+
+---------------------------------------------------------------------------
+-- Barrierefreiheit
+---------------------------------------------------------------------------
+local BASIS = {
+  hell  = { 0.93, 0.91, 0.86 },
+  grau  = { 0.55, 0.55, 0.55 },
+  gruen = { 0.45, 0.85, 0.45 },
+  rot   = { 0.90, 0.35, 0.30 },
+}
+
+local function setze(ziel, quelle) ziel[1], ziel[2], ziel[3] = quelle[1], quelle[2], quelle[3] end
+
+function QK:BarrierefreiAnwenden()
+  local db, f = self.db or {}, self.farben
+  setze(f.hell, db.kontrast and { 1, 1, 1 } or BASIS.hell)
+  setze(f.grau, db.kontrast and { 0.82, 0.82, 0.82 } or BASIS.grau)
+  -- Farbenblind: Blau statt Grün, Orange statt Rot (für Rot-Grün-Schwäche unterscheidbar)
+  setze(f.gruen, db.farbenblind and { 0.35, 0.65, 1 } or BASIS.gruen)
+  setze(f.rot, db.farbenblind and { 1, 0.6, 0.1 } or BASIS.rot)
+end
+
+-- Faktor für Fenster, Pfeil und Meldungen
+function QK:Groesse()
+  return (self.db and self.db.allesGroesser) and 1.25 or 1
+end
+
+-- Hintergrund-Deckkraft: im Kontrastmodus fast undurchsichtig
+function QK:Deckkraft(normal)
+  return (self.db and self.db.kontrast) and math.max(normal, 0.92) or normal
+end
+
+-- Text für die Sprachausgabe säubern (Farbcodes, Symbole, Links)
+local function sauber(text)
+  text = tostring(text or "")
+  text = text:gsub("|T.-|t", ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+  text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("%[(.-)%]", "%1")
+  return (text:gsub("%s+", " "):gsub("^%s+", ""))
+end
+QK.Sauber = sauber
+
+local stimme
+local function Stimme()
+  if stimme ~= nil then return stimme end
+  stimme = false
+  if C_TTSSettings and C_TTSSettings.GetVoiceOptionID and Enum and Enum.TtsVoiceType then
+    local ok, id = pcall(C_TTSSettings.GetVoiceOptionID, Enum.TtsVoiceType.Standard)
+    if ok and id then stimme = id end
+  end
+  if not stimme and C_VoiceChat and C_VoiceChat.GetTtsVoices then
+    local ok, liste = pcall(C_VoiceChat.GetTtsVoices)
+    if ok and liste and liste[1] then stimme = liste[1].voiceID end
+  end
+  return stimme
+end
+
+-- Liest einen Text mit der Sprachausgabe des Spiels vor. Gibt true zurück, wenn es geklappt hat.
+function QK:Sprechen(text, immer)
+  if not immer and not (self.db and self.db.vorlesen) then return false end
+  text = sauber(text)
+  if text == "" then return false end
+  if TextToSpeech_Speak and TextToSpeech_GetSelectedVoice and Enum and Enum.TtsVoiceType then
+    local ok = pcall(TextToSpeech_Speak, text, TextToSpeech_GetSelectedVoice(Enum.TtsVoiceType.Standard))
+    if ok then return true end
+  end
+  if C_VoiceChat and C_VoiceChat.SpeakText then
+    local id = Stimme()
+    if id then
+      local ziel = Enum and Enum.VoiceTtsDestination and Enum.VoiceTtsDestination.LocalPlayback or 1
+      if pcall(C_VoiceChat.SpeakText, id, text, ziel, 0, 100) then return true end
+      if pcall(C_VoiceChat.SpeakText, id, text, 0, 100) then return true end
+    end
+  end
+  return false
+end
+
+-- Liest die Fokus-Quest (oder die erste der Liste) mit ihren offenen Zielen vor.
+function QK:FokusVorlesen()
+  local id = self.Compat:Fokus()
+  local quests = self.Compat:Questlog()
+  local q
+  for _, x in ipairs(quests) do if x.id == id then q = x end end
+  q = q or quests[1]
+  if not q then self:Sprechen("Keine Quests im Log.", true) return end
+  local teile = { q.titel }
+  if q.fertig then
+    teile[#teile + 1] = "Bereit zum Abgeben."
+  else
+    for _, z in ipairs(q.ziele) do
+      if not z.fertig then
+        teile[#teile + 1] = z.ist and z.soll and ("%s: %d von %d."):format(z.text, z.ist, z.soll) or (z.text .. ".")
+      end
+    end
+  end
+  local d = self.Kompass and self.Kompass:Entfernung(q.id)
+  if d then teile[#teile + 1] = "Entfernung " .. self:EntfernungText(d):gsub(" m$", " Meter"):gsub(" km$", " Kilometer") .. "." end
+  if not self:Sprechen(table.concat(teile, " "), true) then
+    self:Meldung("die Sprachausgabe ist nicht verfügbar. In den Spieleinstellungen unter Barrierefreiheit › Text-zu-Sprache lässt sie sich einrichten.")
+  end
 end
 
 QK.STILE = {
@@ -359,6 +469,7 @@ local HILFE = {
   "/qk gebiet [Name] – Gebietsfortschritt",
   "/qk buch | welt | suche [Text] | tagebuch – Questbuch",
   "/qk naechste – nächstgelegene Quest als Fokus",
+  "/qk vorlesen – Fokus-Quest vorlesen lassen",
   "/qk fokus – Fokus-Quest aufheben",
   "/qk einblenden – ausgeblendete Quests wieder zeigen",
   "/qk zuruecksetzen – alles auf Anfang",
@@ -377,7 +488,7 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
     QK:Meldung("Version %s, Questdaten vom %s", QK.version, QK.datenStand or "?")
     for _, zeile in ipairs(HILFE) do DEFAULT_CHAT_FRAME:AddMessage("  " .. zeile) end
   elseif befehl == "einstellungen" or befehl == "optionen" or befehl == "config" then
-    QK.Assistent:Oeffnen(2, true)
+    QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true)
   elseif befehl == "einrichten" or befehl == "assistent" then
     QK.Assistent:Oeffnen(1)
   elseif befehl == "gebiet" or befehl == "zone" then
@@ -388,6 +499,8 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
     QK.Gebiet:Reiter(befehl)
   elseif befehl == "suche" then
     QK.Gebiet:Reiter("suche", rest)
+  elseif befehl == "vorlesen" then
+    QK:FokusVorlesen()
   elseif befehl == "naechste" or befehl == "nächste" then
     QK.Tracker:FokusNaechste()
   elseif befehl == "fokus" then
@@ -428,6 +541,7 @@ BINDING_NAME_QUESTKOMPASS_NAECHSTE = "Nächstgelegene Quest als Fokus"
 BINDING_NAME_QUESTKOMPASS_WEITER = "Fokus auf die nächste Quest der Liste"
 BINDING_NAME_QUESTKOMPASS_BUCH = "Questbuch öffnen"
 BINDING_NAME_QUESTKOMPASS_EINSTELLUNGEN = "Einstellungen öffnen"
+BINDING_NAME_QUESTKOMPASS_VORLESEN = "Fokus-Quest vorlesen"
 
 function QK:Taste(was)
   QK:Sicher("Taste", function()
@@ -435,6 +549,7 @@ function QK:Taste(was)
     elseif was == "naechste" then QK.Tracker:FokusNaechste(true)
     elseif was == "weiter" then QK.Tracker:FokusWeiter()
     elseif was == "buch" then QK.Gebiet:Umschalten()
-    elseif was == "einstellungen" then QK.Assistent:Oeffnen(2, true) end
+    elseif was == "vorlesen" then QK:FokusVorlesen()
+    elseif was == "einstellungen" then QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true) end
   end)
 end

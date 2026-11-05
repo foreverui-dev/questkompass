@@ -11,6 +11,7 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 - **Erfahrungsvorschau:** was die fertigen Quests zusammen bringen, und ob es für den Stufenaufstieg reicht.
 - **Questbuch** mit vier Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch) und Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde).
 - **Kleine Helfer:** Meldung und Klang bei Fortschritt, Fortschritt an die Gruppe, Warnung bei vollem Questlog, automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp, Knopf an der Minikarte.
+- **Barrierefreiheit:** Vorlesen über die Sprachausgabe des Spiels, hoher Kontrast, Farbenblind-Modus (Blau/Orange, Status als Wort), alles größer (Liste bis 200 %), weniger Bewegung. Alles über Tastatur erreichbar.
 - **Profile** für alle Charaktere oder einzeln, **Tastenkürzel** unter „AddOns“ in den Tastenbelegungen.
 - **Quest-Tooltips:** Quest-Links im Chat zeigen Gebiet, Typ, Erfahrung und Ruf.
 
@@ -25,6 +26,7 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 | `/qk buch` · `/qk welt` · `/qk tagebuch` | Questbuch |
 | `/qk suche Text` | Quest suchen |
 | `/qk naechste` | nächstgelegene Quest als Fokus |
+| `/qk vorlesen` | Fokus-Quest vorlesen lassen |
 | `/qk fokus` | Fokus aufheben |
 | `/qk einblenden` | ausgeblendete Quests wieder zeigen |
 | `/qk zuruecksetzen` | alle Einstellungen zurücksetzen |

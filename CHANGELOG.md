@@ -1,5 +1,14 @@
 # Questkompass
 
+## 0.4.0 – Barrierefreiheit
+
+- Neue Seite „Barrierefreiheit“ gleich zu Beginn des Einrichtungsassistenten
+- Vorlesen: Fortschritt, fertige Quests und „Am Ziel“ über die Sprachausgabe des Spiels; Tastenkürzel und /qk vorlesen lesen die Fokus-Quest mit offenen Zielen und Entfernung vor
+- Hoher Kontrast: fast undurchsichtige Hintergründe, weiße Schrift, hellere Nebentexte
+- Farbenblind-Modus: Blau und Orange statt Grün und Rot, Fokuspfeil mit Richtung in Worten, Status im Questbuch zusätzlich als Wort
+- Alles größer: Questbuch, Assistent, Fokuspfeil, Menü und Meldungen um ein Viertel größer; die Liste lässt sich bis 200 % vergrößern
+- Weniger Bewegung: Meldungen ohne Ein- und Ausblenden und doppelt so lange sichtbar
+
 ## 0.3.0
 
 20 neue Funktionen:

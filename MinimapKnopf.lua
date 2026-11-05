@@ -37,7 +37,7 @@ function MK:Start()
 
   knopf:SetScript("OnClick", function(_, taste)
     if taste == "RightButton" then
-      QK.Assistent:Oeffnen(2, true)
+      QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true)
     elseif taste == "MiddleButton" or IsShiftKeyDown() then
       QK.Gebiet:Umschalten()
     else

@@ -4,10 +4,24 @@ local P = QK:Modul("Pfeil")
 local rahmen, pfeil, titel, info
 
 local function Farbe(winkel)
-  -- grün geradeaus, gelb seitlich, rot hinter dir
   local a = math.abs(((winkel + math.pi) % (2 * math.pi)) - math.pi) / math.pi
+  if QK.db.farbenblind then
+    -- blau geradeaus, weiß seitlich, orange hinter dir
+    if a < 0.5 then return 0.35 + a * 1.3, 0.65 + a * 0.7, 1 end
+    return 1, 1 - (a - 0.5) * 0.8, 1 - (a - 0.5) * 1.8
+  end
+  -- grün geradeaus, gelb seitlich, rot hinter dir
   if a < 0.5 then return 0.3 + a * 1.4, 0.9, 0.3 end
   return 1, 0.9 - (a - 0.5) * 1.4, 0.25
+end
+
+-- Richtung in Worten, z. B. für Farbenblind- und Kontrastmodus
+local function Richtungswort(winkel)
+  local grad = math.deg(((winkel + math.pi) % (2 * math.pi)) - math.pi)
+  if math.abs(grad) < 25 then return "geradeaus" end
+  if math.abs(grad) > 150 then return "hinter dir" end
+  if grad > 0 then return grad < 80 and "halb rechts" or "rechts" end
+  return grad > -80 and "halb links" or "links"
 end
 
 local function Erstellen()
@@ -73,10 +87,13 @@ function P:Drehen()
   end
   if d and d < 8 then
     info:SetText(QK.gold .. "Am Ziel|r")
+    if not rahmen.angekommen then rahmen.angekommen = true; QK:Sprechen("Am Ziel.") end
   elseif d then
+    if d > 20 then rahmen.angekommen = false end
     local tempo = GetUnitSpeed and GetUnitSpeed("player") or 0
     local text = QK:EntfernungText(d)
     if tempo > 0 then text = text .. "  ·  " .. QK:DauerText(d / tempo) end
+    if winkel and (QK.db.farbenblind or QK.db.kontrast) then text = text .. "  ·  " .. Richtungswort(winkel) end
     info:SetText(text)
   else
     info:SetText("|cff8c8c8cZiel nicht auf dieser Karte|r")
@@ -100,6 +117,7 @@ end
 
 function P:Anwenden()
   if not rahmen then return end
+  rahmen:SetScale(QK:Groesse())
   rahmen:ClearAllPoints()
   local p = QK.db.pfeilPos
   if p then rahmen:SetPoint(p[1], UIParent, p[2], p[3], p[4]) else rahmen:SetPoint("TOP", UIParent, "TOP", 0, -110) end

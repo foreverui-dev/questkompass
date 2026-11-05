@@ -175,6 +175,10 @@ local function QuestEintrag(q, mitGebiet)
   if q.status == 1 then e.symbol, e.farbe = IM_LOG, QK.farben.gold
   elseif q.status == 2 then e.symbol, e.farbe = OFFEN, QK.farben.hell
   else e.symbol, e.farbe = HAKEN, QK.farben.grau end
+  -- Status zusätzlich als Wort, damit er nicht nur an Farbe und Symbol hängt
+  if QK.db.farbenblind or QK.db.kontrast then
+    e.text = e.text .. "  |cffbfbfbf(" .. ({ "im Log", "offen", "erledigt" })[q.status] .. ")|r"
+  end
   if mitGebiet and q.gebiet then e.klick = function() G:GebietWaehlen(q.gebiet) end end
   return e
 end
@@ -270,6 +274,8 @@ end
 
 function G:Aktualisieren()
   if not fenster or not fenster:IsShown() then return end
+  fenster:SetScale(QK:Groesse())
+  fenster:SetBackdropColor(0.06, 0.06, 0.08, QK:Deckkraft(0.95))
   for name, k in pairs(koepfe) do k:SetShown(name == reiter) end
   for name, b in pairs(reiterKnoepfe) do
     b.text:SetTextColor(unpack(name == reiter and QK.farben.gold or QK.farben.grau))

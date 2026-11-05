@@ -220,7 +220,7 @@ local function Durchlauf(modern)
   pruefe(QK.Compat.modern == modern, "richtige Quest-API erkannt")
   pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent öffnet beim ersten Start")
   pruefe(enthaelt("Willkommen") and enthaelt("Los geht’s"), "Willkommensseite")
-  for i = 1, 8 do
+  for i = 1, 9 do
     alleTexte = {}
     QK.Assistent:Oeffnen(i)
   end
@@ -407,9 +407,30 @@ local function Durchlauf(modern)
   Timer()
   pruefe(BINDING_NAME_QUESTKOMPASS_NAECHSTE ~= nil, "Tastenkürzel")
 
+  -- 0.4: Barrierefreiheit
+  local gesprochen = {}
+  TextToSpeech_Speak = function(t) gesprochen[#gesprochen + 1] = t end
+  TextToSpeech_GetSelectedVoice = function() return 1 end
+  Enum = Enum or {}
+  Enum.TtsVoiceType = { Standard = 0 }
+  QK.db.vorlesen, QK.db.farbenblind, QK.db.kontrast, QK.db.allesGroesser, QK.db.wenigerBewegung = true, true, true, true, true
+  QK:Anwenden()
+  pruefe(QK.farben.gruen[3] == 1 and QK.farben.hell[1] == 1, "Farbenblind- und Kontrastfarben")
+  QK.Meldungen:Zeigen("BEREIT ZUM ABGEBEN", "|TInterface\\x:16|t |cff00ff00Test|r")
+  pruefe(gesprochen[#gesprochen] == "BEREIT ZUM ABGEBEN. Test", "Meldung wird vorgelesen: " .. tostring(gesprochen[#gesprochen]))
+  QK:FokusVorlesen()
+  pruefe(#gesprochen >= 2 and #gesprochen[#gesprochen] > 5, "Fokus-Quest vorlesen: " .. tostring(gesprochen[#gesprochen]))
+  alleTexte = {}
+  QK.Gebiet:Zeigen()
+  pruefe(enthaelt("(erledigt)") or enthaelt("(offen)"), "Status als Wort im Questbuch")
+  pruefe(QuestkompassAssistent and true, "Assistent mit Barrierefreiheit-Seite")
+  QK.db.vorlesen, QK.db.farbenblind, QK.db.kontrast, QK.db.allesGroesser, QK.db.wenigerBewegung = false, false, false, false, false
+  QK:Anwenden()
+  pruefe(QK.farben.gruen[3] < 0.5, "Farben zurück auf normal")
+
   -- Befehle
   for _, b in ipairs({ "", "", "hilfe", "einstellungen", "einrichten", "gebiet", "gebiet Westfall", "gebiet Atlantis",
-      "fokus", "einblenden", "diagnose", "fehler", "zuruecksetzen", "quatsch" }) do
+      "fokus", "vorlesen", "einblenden", "diagnose", "fehler", "zuruecksetzen", "quatsch" }) do
     local ok, err = pcall(SlashCmdList.QUESTKOMPASS, b)
     Timer()
     pruefe(ok, "/qk " .. b .. (ok and "" or (" → " .. tostring(err))))

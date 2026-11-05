@@ -19,6 +19,12 @@ local function Erstellen()
   anzeige:Hide()
   anzeige:SetScript("OnUpdate", function(self, el)
     self.zeit = self.zeit + el
+    if QK.db.wenigerBewegung then
+      -- ohne Ein- und Ausblenden, dafür doppelt so lange sichtbar
+      self:SetAlpha(1)
+      if self.zeit > 7 then self:Hide() end
+      return
+    end
     if self.zeit < 0.25 then self:SetAlpha(self.zeit / 0.25)
     elseif self.zeit < 3 then self:SetAlpha(1)
     elseif self.zeit < 4 then self:SetAlpha(4 - self.zeit)
@@ -31,8 +37,10 @@ function M:Zeigen(oben, text)
   anzeige.oben:SetText(oben)
   anzeige.text:SetText(text)
   anzeige.zeit = 0
-  anzeige:SetAlpha(0)
+  anzeige:SetScale(QK:Groesse())
+  anzeige:SetAlpha(QK.db.wenigerBewegung and 1 or 0)
   anzeige:Show()
+  QK:Sprechen(oben .. ". " .. text)
 end
 
 local function Klang()

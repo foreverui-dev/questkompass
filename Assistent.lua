@@ -123,6 +123,31 @@ local function SeitenBauen()
     tipp:SetPoint("BOTTOMLEFT", 0, 4)
   end)
 
+  NeueSeite("Barrierefreiheit", function(s, merke)
+    local t = Text(s, "GameFontHighlight", "Questkompass soll für alle gut nutzbar sein. Stell hier ein, was dir hilft. "
+      .. "Alles lässt sich später unter |cfff2c45a/qk einstellungen|r ändern.", 500)
+    t:SetPoint("TOPLEFT", 0, 0)
+    Raster(s, merke, {
+      { "Vorlesen", "Fortschritt und fertige Quests per Sprachausgabe.", "vorlesen" },
+      { "Hoher Kontrast", "Dunklerer Hintergrund, hellere Schrift.", "kontrast" },
+      { "Farbenblind-Modus", "Blau und Orange statt Grün und Rot, Status als Wort.", "farbenblind" },
+      { "Alles größer", "Fenster, Pfeil und Meldungen um ein Viertel größer.", "allesGroesser" },
+      { "Weniger Bewegung", "Keine Einblendungen, Meldungen bleiben länger.", "wenigerBewegung" },
+    }, -44, 52)
+    local test = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    test:SetSize(150, 22)
+    test:SetText("Vorlesen testen")
+    test:SetPoint("TOPLEFT", 255, -158)
+    test:SetScript("OnClick", function()
+      if not QK:Sprechen("Hallo! So klingt Questkompass.", true) then
+        QK:Meldung("die Sprachausgabe ist nicht verfügbar. In den Spieleinstellungen unter Barrierefreiheit › Text-zu-Sprache lässt sie sich einrichten.")
+      end
+    end)
+    local tipp = Text(s, "GameFontDisableSmall", "Tastenkürzel „Fokus-Quest vorlesen“ und |cfff2c45a/qk vorlesen|r lesen die aktuelle Quest jederzeit vor. "
+      .. "Die Liste selbst kannst du auf der nächsten Seite bis 200 % vergrößern.", 500)
+    tipp:SetPoint("TOPLEFT", 0, -218)
+  end)
+
   NeueSeite("Wie soll die Liste aussehen?", function(s, merke)
     local x = 0
     for _, id in ipairs({ "ruhig", "klassisch", "kompakt" }) do
@@ -162,7 +187,7 @@ local function SeitenBauen()
     wert:SetJustifyH("CENTER")
     wert:SetPoint("TOPLEFT", 110, -180)
     local function schritt(d)
-      QK.db.skalierung = math.max(0.6, math.min(1.6, (QK.db.skalierung or 1) + d))
+      QK.db.skalierung = math.max(0.6, math.min(2.0, (QK.db.skalierung or 1) + d))
       QK:Anwenden(); A:Auffrischen()
     end
     local minus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
@@ -302,6 +327,8 @@ end
 ---------------------------------------------------------------------------
 function A:Auffrischen()
   if not fenster then return end
+  fenster:SetScale(QK:Groesse())
+  fenster.hg:SetColorTexture(0.06, 0.06, 0.08, QK:Deckkraft(0.96))
   for i, s in ipairs(seiten) do
     s:SetShown(i == seite)
     if i == seite then for _, e in ipairs(s.elemente) do if e.Auffrischen then e.Auffrischen() end end end
@@ -425,7 +452,7 @@ function A:Start()
   b:SetScript("OnClick", function()
     if SettingsPanel and SettingsPanel:IsShown() then HideUIPanel(SettingsPanel) end
     if InterfaceOptionsFrame and InterfaceOptionsFrame:IsShown() then HideUIPanel(InterfaceOptionsFrame) end
-    A:Oeffnen(2, true)
+    A:Oeffnen(QK.SEITE_EINSTELLUNGEN, true)
   end)
   if Settings and Settings.RegisterCanvasLayoutCategory then
     local kategorie = Settings.RegisterCanvasLayoutCategory(panel, "Questkompass")

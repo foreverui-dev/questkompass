@@ -14,4 +14,7 @@
   <Binding name="QUESTKOMPASS_EINSTELLUNGEN" category="ADDONS">
     Questkompass:Taste("einstellungen")
   </Binding>
+  <Binding name="QUESTKOMPASS_VORLESEN" category="ADDONS">
+    Questkompass:Taste("vorlesen")
+  </Binding>
 </Bindings>

@@ -79,6 +79,7 @@ local function MenueZeigen(anker, eintraege)
   else
     menue:SetPoint("TOPRIGHT", anker, "TOPLEFT", -4, 0)
   end
+  menue:SetScale(QK:Groesse())
   menue:Show()
 end
 
@@ -372,7 +373,7 @@ function T:Aktualisieren()
   if not rahmen then return end
   local db, stil = QK.db, QK:Stil()
   rahmen:SetWidth(db.breite)
-  hintergrund:SetAlpha(stil.hintergrund)
+  hintergrund:SetAlpha(QK:Deckkraft(stil.hintergrund))
   linie:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.35)
   kopfTitel:SetTextColor(unpack(QK.farben.gold))
   for i = 1, benutzt do zeilen[i]:Hide() end
@@ -725,7 +726,7 @@ function T:Start()
   end)
   kopf:SetScript("OnClick", function(_, taste)
     if taste == "RightButton" then
-      QK.Assistent:Oeffnen(2, true)
+      QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true)
     else
       eingeklappt = not eingeklappt
       T:Aktualisieren()
@@ -749,7 +750,7 @@ function T:Start()
   zaehler:SetPoint("RIGHT", -4, -1)
 
   local zahnrad = KopfKnopf("Interface\\Icons\\Trade_Engineering", { "Einstellungen", "Stil, Lage und Extras ändern" },
-    function() QK.Assistent:Oeffnen(2, true) end)
+    function() QK.Assistent:Oeffnen(QK.SEITE_EINSTELLUNGEN, true) end)
   zahnrad:SetPoint("TOPRIGHT", -6, -2)
   local karte = KopfKnopf("Interface\\Icons\\INV_Misc_Map_01", { "Questbuch", "Gebiet, Welt, Suche und Tagebuch" },
     function() QK.Gebiet:Umschalten() end)
