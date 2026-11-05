@@ -106,11 +106,18 @@ local function NeueSeite(titel, bauen)
   seiten[#seiten + 1] = s
 end
 
+local function Raster(s, merke, liste, y, zeilenHoehe)
+  for i, e in ipairs(liste) do
+    local f = merke(Schalter(s, e[1], e[2], e[3], e[4]))
+    f:SetPoint("TOPLEFT", ((i - 1) % 2) * 255, y - math.floor((i - 1) / 2) * (zeilenHoehe or 48))
+  end
+end
+
 local function SeitenBauen()
   NeueSeite("Willkommen", function(s)
     Absatz(s, "Schön, dass du da bist!\n\nQuestkompass zeigt dir ruhig und übersichtlich, was als Nächstes zu tun ist: "
       .. "welche Quest am nächsten liegt, in welche Richtung du laufen musst und wie weit du bist.\n\n"
-      .. "In vier kurzen Schritten stellst du alles nach deinem Geschmack ein. Jede Wahl siehst du sofort in der Liste. "
+      .. "In ein paar kurzen Schritten stellst du alles nach deinem Geschmack ein. Jede Wahl siehst du sofort. "
       .. "Später erreichst du diese Einstellungen per Rechtsklick auf die Liste, über das Zahnrad oder mit |cfff2c45a/qk einstellungen|r.")
     local tipp = Text(s, "GameFontDisableSmall", "Keine Lust auf Einstellungen? Klick einfach auf „Fertig“, die Standardwerte passen für die meisten.", 500)
     tipp:SetPoint("BOTTOMLEFT", 0, 4)
@@ -124,48 +131,67 @@ local function SeitenBauen()
         klassisch = "Ohne Hintergrund, größere Schrift, wie die Questverfolgung des Spiels.",
         kompakt = "Kleine Schrift, nur das nächste Ziel je Quest. Viele Quests auf wenig Platz.",
       })[id]
-      local k = merke(Karte(s, QK.STILE[id].name, beschreibung, 160, 100,
+      local k = merke(Karte(s, QK.STILE[id].name, beschreibung, 160, 92,
         function() return QK.db.stil == id end,
         function() QK.db.stil = id; QK.db.anzahl = QK.STILE[id].anzahl end))
       k:SetPoint("TOPLEFT", x, 0)
       x = x + 170
     end
+    local a = Text(s, "GameFontNormal", "Akzentfarbe", 200)
+    a:SetPoint("TOPLEFT", 0, -106)
+    for i, id in ipairs({ "gold", "klasse", "eis", "smaragd" }) do
+      local k = merke(Karte(s, QK.AKZENTE[id][1], "", 120, 34,
+        function() return QK.db.akzent == id end,
+        function() QK.db.akzent = id end))
+      k:SetPoint("TOPLEFT", (i - 1) * 127, -124)
+      local farbe = k:CreateTexture(nil, "ARTWORK")
+      farbe:SetSize(10, 10)
+      farbe:SetPoint("RIGHT", -10, 0)
+      local alt = k.Auffrischen
+      k.Auffrischen = function()
+        local merk = QK.db.akzent
+        QK.db.akzent = id; QK:AkzentAnwenden()
+        farbe:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 1)
+        QK.db.akzent = merk; QK:AkzentAnwenden()
+        alt()
+      end
+    end
     local g = Text(s, "GameFontNormal", "Größe", 200)
-    g:SetPoint("TOPLEFT", 0, -125)
+    g:SetPoint("TOPLEFT", 0, -180)
     local wert = Text(s, "GameFontHighlight", "", 60)
     wert:SetJustifyH("CENTER")
-    wert:SetPoint("TOPLEFT", 110, -125)
+    wert:SetPoint("TOPLEFT", 110, -180)
     local function schritt(d)
       QK.db.skalierung = math.max(0.6, math.min(1.6, (QK.db.skalierung or 1) + d))
       QK:Anwenden(); A:Auffrischen()
     end
     local minus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
-    minus:SetSize(26, 20); minus:SetText("–"); minus:SetPoint("TOPLEFT", 80, -121)
+    minus:SetSize(26, 20); minus:SetText("–"); minus:SetPoint("TOPLEFT", 80, -176)
     minus:SetScript("OnClick", function() schritt(-0.1) end)
     local plus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
-    plus:SetSize(26, 20); plus:SetText("+"); plus:SetPoint("TOPLEFT", 175, -121)
+    plus:SetSize(26, 20); plus:SetText("+"); plus:SetPoint("TOPLEFT", 175, -176)
     plus:SetScript("OnClick", function() schritt(0.1) end)
     local b = Text(s, "GameFontNormal", "Breite", 200)
-    b:SetPoint("TOPLEFT", 260, -125)
+    b:SetPoint("TOPLEFT", 260, -180)
     local bwert = Text(s, "GameFontHighlight", "", 60)
     bwert:SetJustifyH("CENTER")
-    bwert:SetPoint("TOPLEFT", 370, -125)
+    bwert:SetPoint("TOPLEFT", 370, -180)
     local function bschritt(d)
       QK.db.breite = math.max(180, math.min(400, (QK.db.breite or 240) + d))
       QK:Anwenden(); A:Auffrischen()
     end
     local bminus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
-    bminus:SetSize(26, 20); bminus:SetText("–"); bminus:SetPoint("TOPLEFT", 340, -121)
+    bminus:SetSize(26, 20); bminus:SetText("–"); bminus:SetPoint("TOPLEFT", 340, -176)
     bminus:SetScript("OnClick", function() bschritt(-20) end)
     local bplus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
-    bplus:SetSize(26, 20); bplus:SetText("+"); bplus:SetPoint("TOPLEFT", 435, -121)
+    bplus:SetSize(26, 20); bplus:SetText("+"); bplus:SetPoint("TOPLEFT", 435, -176)
     bplus:SetScript("OnClick", function() bschritt(20) end)
     merke({ Auffrischen = function()
       wert:SetText(("%d %%"):format(math.floor((QK.db.skalierung or 1) * 100 + 0.5)))
       bwert:SetText(("%d"):format(QK.db.breite or 240))
     end })
-    local tipp = Text(s, "GameFontDisableSmall", "Die Liste rechts neben dem Fenster zeigt deine Wahl sofort.", 500)
-    tipp:SetPoint("TOPLEFT", 0, -165)
+    local tipp = Text(s, "GameFontDisableSmall", "Die Liste neben dem Fenster zeigt deine Wahl sofort.", 500)
+    tipp:SetPoint("TOPLEFT", 0, -216)
   end)
 
   NeueSeite("Wo soll die Liste stehen?", function(s, merke)
@@ -195,7 +221,7 @@ local function SeitenBauen()
     f:SetPoint("TOPLEFT", 0, -160)
   end)
 
-  NeueSeite("Wie soll sie sich verhalten?", function(s, merke)
+  NeueSeite("Sortierung und Anzeige", function(s, merke)
     local sort = {
       { "entfernung", "Nächste zuerst", "Quests nach Entfernung sortiert." },
       { "zone", "Nach Zone", "Aktuelle Zone oben, fertige Quests zuerst." },
@@ -207,45 +233,65 @@ local function SeitenBauen()
         function() QK.db.sortierung = e[1] end))
       k:SetPoint("TOPLEFT", (i - 1) * 170, 0)
     end
-    local schalter = {
+    merke({ Auffrischen = function() QK.db._nurVerfolgt = QK.db.modus == "verfolgt" end })
+    Raster(s, merke, {
       { "Questverfolgung ersetzen", "Blendet die Liste des Spiels aus.", "blizzardAusblenden" },
-      { "Kompasspfeile", "Pfeil zeigt die Richtung zum Ziel.", "pfeil" },
+      { "Nach Zonen gruppieren", "Überschriften, die sich einklappen lassen.", "gruppen" },
       { "Ruhemodus im Kampf", "Liste wird im Kampf durchsichtig.", "ruhemodus" },
-      { "Nur verfolgte Quests", "Zeigt nur, was du verfolgst.", nil },
-    }
-    for i, e in ipairs(schalter) do
-      local f
-      if e[3] then
-        f = merke(Schalter(s, e[1], e[2], e[3]))
-      else
-        f = merke(Schalter(s, e[1], e[2], "_nurVerfolgt", function(an) QK.db.modus = an and "verfolgt" or "alle" end))
-        local alt = f.Auffrischen
-        f.Auffrischen = function() QK.db._nurVerfolgt = QK.db.modus == "verfolgt"; alt() end
-      end
-      f:SetPoint("TOPLEFT", ((i - 1) % 2) * 255, -80 - math.floor((i - 1) / 2) * 48)
-    end
+      { "Nur verfolgte Quests", "Zeigt nur, was du verfolgst.", "_nurVerfolgt", function(an) QK.db.modus = an and "verfolgt" or "alle" end },
+      { "Graue Quests ausblenden", "Quests, die kaum noch Erfahrung bringen.", "graueAusblenden" },
+      { "Neue Quests markieren", "Zwei Minuten lang mit „Neu“.", "neuMarkierung" },
+    }, -78)
+  end)
+
+  NeueSeite("Navigation", function(s, merke)
+    local t = Text(s, "GameFontHighlight", "Questkompass führt dich zum Ziel. Klick in der Liste auf eine Quest, um sie als Fokus zu setzen.", 500)
+    t:SetPoint("TOPLEFT", 0, 0)
+    Raster(s, merke, {
+      { "Kompasspfeile", "Kleiner Pfeil an jeder Quest.", "pfeil" },
+      { "Großer Fokuspfeil", "Schwebender Pfeil mit Entfernung und Ankunftszeit.", "pfeilGross" },
+      { "Automatischer Fokus", "Ohne Fokus wird die nächste Quest gewählt.", "autoFokus" },
+      { "Questgegenstände", "Knopf zum Benutzen direkt an der Quest.", "questItems" },
+      { "Gruppenmitglieder zeigen", "Wer aus der Gruppe dieselbe Quest hat.", "mitspieler" },
+      { "Erfahrungsvorschau", "Was deine fertigen Quests zusammen bringen.", "epVorschau" },
+    }, -40)
   end)
 
   NeueSeite("Kleine Helfer", function(s, merke)
-    local schalter = {
+    Raster(s, merke, {
       { "Meldung bei Fortschritt", "Kurzer Hinweis, wenn ein Ziel erfüllt ist.", "meldungen" },
       { "Klang bei fertiger Quest", "Damit du nichts verpasst.", "klang" },
+      { "Fortschritt an die Gruppe", "Schreibt Fortschritte in den Gruppenchat.", "gruppenMeldungen" },
+      { "Warnung bei vollem Questlog", "Kurz bevor kein Platz mehr frei ist.", "logWarnung" },
       { "Quests automatisch annehmen", "Halte Umschalt gedrückt, um es auszusetzen.", "autoAnnehmen" },
       { "Quests automatisch abgeben", "Nur ohne Belohnungswahl. Umschalt hält an.", "autoAbgeben" },
       { "Belohnungstipp", "Markiert die Belohnung mit dem höchsten Wert.", "belohnungsTipp" },
-      { "Knopf an der Minikarte", "Schneller Zugriff auf Liste und Einstellungen.", "minimapKnopf" },
+      { "Knopf an der Minikarte", "Schneller Zugriff auf Liste und Questbuch.", "minimapKnopf" },
+    }, 0, 52)
+  end)
+
+  NeueSeite("Profil und Tasten", function(s, merke)
+    local profile = {
+      { "konto", "Für alle Charaktere", "Eine Einstellung für deinen ganzen Account." },
+      { "eigen", "Nur für diesen Charakter", "Eigene Einstellungen, z. B. für einen Twink." },
     }
-    for i, e in ipairs(schalter) do
-      local f = merke(Schalter(s, e[1], e[2], e[3]))
-      f:SetPoint("TOPLEFT", ((i - 1) % 2) * 255, -math.floor((i - 1) / 2) * 52)
+    for i, p in ipairs(profile) do
+      local k = merke(Karte(s, p[2], p[3], 245, 62,
+        function() return (QK.char.profil or "konto") == p[1] end,
+        function() QK:ProfilWechseln(p[1]) end))
+      k:SetPoint("TOPLEFT", (i - 1) * 255, 0)
     end
+    Absatz(s, "|cfff2c45aTastenkürzel|r findest du in den Tastenbelegungen des Spiels unter „AddOns“ › „Questkompass“: "
+      .. "Liste umschalten, nächstgelegene Quest als Fokus, Fokus weiterschalten, Questbuch und Einstellungen.\n\n"
+      .. "|cfff2c45a/qk hilfe|r zeigt alle Chatbefehle.", -80)
   end)
 
   NeueSeite("Alles bereit!", function(s)
     Absatz(s, "So bedienst du Questkompass:\n\n"
-      .. "|cfff2c45aKlick|r auf eine Quest setzt sie als Fokus, das Spiel zeigt dann den Weg dorthin.\n"
+      .. "|cfff2c45aKlick|r auf eine Quest setzt sie als Fokus, Pfeil und Navigation zeigen den Weg.\n"
       .. "|cfff2c45aRechtsklick|r öffnet weitere Möglichkeiten wie Teilen oder Ausblenden.\n"
-      .. "|cfff2c45aKartensymbol|r oben in der Liste: alle Quests dieser Zone und dein Fortschritt.\n"
+      .. "|cfff2c45aMausrad|r über der Liste blättert, wenn es mehr Quests gibt.\n"
+      .. "|cfff2c45aKartensymbol|r öffnet das Questbuch: Gebiet, Welt, Suche und Tagebuch.\n"
       .. "|cfff2c45aZahnrad|r oder |cfff2c45a/qk einstellungen|r: hierher zurück.\n\n"
       .. "Viel Spaß in Azeroth! Ideen und Wünsche gern über foreverui.de.")
   end)
@@ -278,7 +324,7 @@ end
 
 local function Erstellen()
   fenster = CreateFrame("Frame", "QuestkompassAssistent", UIParent)
-  fenster:SetSize(560, 400)
+  fenster:SetSize(560, 440)
   fenster:SetPoint("CENTER", -120, 40)
   fenster:SetFrameStrata("DIALOG")
   fenster:SetClampedToScreen(true)

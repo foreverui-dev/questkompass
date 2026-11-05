@@ -72,6 +72,7 @@ function C:Questlog()
           quests[#quests + 1] = {
             index = i, id = id, titel = info.title or ("Quest " .. id),
             stufe = info.level, gruppe = info.suggestedGroup,
+            haeufigkeit = info.frequency,
             zone = zone,
             gebiet = (daten and daten.gebiet) or QK:GebietZuName(zone),
             fertig = fertig and true or false,
@@ -92,6 +93,7 @@ function C:Questlog()
         local daten = QK:Quest(questID)
         quests[#quests + 1] = {
           index = i, id = questID, titel = titel, stufe = stufe,
+          haeufigkeit = select(7, GetQuestLogTitle(i)),
           gruppe = tonumber(gruppe), zone = zone,
           gebiet = (daten and daten.gebiet) or QK:GebietZuName(zone),
           fertig = fertig == 1 or fertig == true,
@@ -103,7 +105,9 @@ function C:Questlog()
       end
     end
   end
+  C.titel = C.titel or {}
   for _, q in ipairs(quests) do
+    C.titel[q.id] = q.titel
     if not q.fertig and #q.ziele > 0 then
       local alle = true
       for _, z in ipairs(q.ziele) do if not z.fertig then alle = false break end end
@@ -111,6 +115,46 @@ function C:Questlog()
     end
   end
   return quests
+end
+
+-- Restzeit in Sekunden für Quests mit Zeitlimit, sonst nil.
+function C:Restzeit(q)
+  if CQ.GetTimeAllowed then
+    local ok, gesamt, vergangen = pcall(CQ.GetTimeAllowed, q.id)
+    if ok and gesamt and gesamt > 0 and vergangen then return math.max(0, gesamt - vergangen) end
+  end
+  return nil
+end
+
+-- Questgegenstand: Link, Symbol, Abklingzeit-Funktion
+function C:Gegenstand(q)
+  if not GetQuestLogSpecialItemInfo then return nil end
+  local index = q.index
+  if C.modern and CQ.GetLogIndexForQuestID then index = CQ.GetLogIndexForQuestID(q.id) or index end
+  local link, symbol, _, beiFertig = GetQuestLogSpecialItemInfo(index)
+  if not link or (q.fertig and not beiFertig) then return nil end
+  return link, symbol, index
+end
+
+-- Namen der Gruppenmitglieder, die dieselbe Quest haben.
+function C:Mitspieler(q)
+  local namen = {}
+  local n = (GetNumSubgroupMembers and GetNumSubgroupMembers()) or (GetNumPartyMembers and GetNumPartyMembers()) or 0
+  for i = 1, math.min(n, 4) do
+    local einheit = "party" .. i
+    local hat
+    if CQ.IsUnitOnQuest then hat = CQ.IsUnitOnQuest(einheit, q.id)
+    elseif IsUnitOnQuest then hat = IsUnitOnQuest(q.index, einheit) end
+    if hat == true or hat == 1 then namen[#namen + 1] = UnitName(einheit) end
+  end
+  return namen
+end
+
+-- Ist die Quest für den Charakter grau (bringt kaum noch Erfahrung)?
+function C:IstGrau(q)
+  if not q.stufe or q.stufe <= 0 then return false end
+  local spanne = (UnitQuestTrivialLevelRange and UnitQuestTrivialLevelRange("player")) or (GetQuestGreenRange and GetQuestGreenRange()) or 5
+  return (UnitLevel("player") or 1) - q.stufe > spanne
 end
 
 function C:MaxQuests()
@@ -209,7 +253,7 @@ function C:Diagnose(ausgeben)
     api = {},
   }
   for _, pfad in ipairs(PRUEFEN) do d.api[pfad] = vorhanden(pfad) end
-  QK.db.diagnose = d
+  QK.root.diagnose = d
   if ausgeben then
     QK:Meldung("Client %s (%s), Interface %s, %s Quest-API, Addon %s",
       tostring(version), tostring(build), tostring(interface), C.modern and "moderne" or "klassische", QK.version)

@@ -1,0 +1,17 @@
+<Bindings>
+  <Binding name="QUESTKOMPASS_LISTE" header="QUESTKOMPASS" category="ADDONS">
+    Questkompass:Taste("liste")
+  </Binding>
+  <Binding name="QUESTKOMPASS_NAECHSTE" category="ADDONS">
+    Questkompass:Taste("naechste")
+  </Binding>
+  <Binding name="QUESTKOMPASS_WEITER" category="ADDONS">
+    Questkompass:Taste("weiter")
+  </Binding>
+  <Binding name="QUESTKOMPASS_BUCH" category="ADDONS">
+    Questkompass:Taste("buch")
+  </Binding>
+  <Binding name="QUESTKOMPASS_EINSTELLUNGEN" category="ADDONS">
+    Questkompass:Taste("einstellungen")
+  </Binding>
+</Bindings>

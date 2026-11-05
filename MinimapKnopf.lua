@@ -41,8 +41,7 @@ function MK:Start()
     elseif taste == "MiddleButton" or IsShiftKeyDown() then
       QK.Gebiet:Umschalten()
     else
-      QK.db.versteckt = not QK.db.versteckt
-      QK:Anwenden()
+      QK.Tracker:Umschalten()
     end
   end)
   knopf:SetScript("OnDragStart", function(self)
@@ -59,7 +58,7 @@ function MK:Start()
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("Questkompass", unpack(QK.farben.gold))
     GameTooltip:AddLine("Klick: Liste ein- oder ausblenden", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Umschalt+Klick: Gebietsfortschritt", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine("Umschalt+Klick: Questbuch", 0.8, 0.8, 0.8)
     GameTooltip:AddLine("Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
     GameTooltip:AddLine("Ziehen: Knopf verschieben", 0.6, 0.6, 0.6)
     GameTooltip:Show()

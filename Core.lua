@@ -40,7 +40,43 @@ QK.STANDARD = {
   minimapWinkel = 200,
   gebietPos = nil,
   versteckt = false,
+  -- 0.3
+  akzent = "gold",          -- gold | klasse | eis | smaragd
+  pfeilGross = true,        -- schwebender Fokuspfeil
+  pfeilPos = nil,
+  autoFokus = false,        -- nächstgelegene Quest automatisch als Fokus
+  questItems = true,        -- Knopf für Questgegenstände
+  gruppen = false,          -- Zonenüberschriften in der Liste
+  mitspieler = true,        -- Gruppenmitglieder mit derselben Quest
+  graueAusblenden = false,
+  epVorschau = true,
+  logWarnung = true,
+  gruppenMeldungen = false,
+  neuMarkierung = true,
 }
+
+QK.AKZENTE = {
+  gold    = { "Gold", 0.95, 0.77, 0.35 },
+  klasse  = { "Klassenfarbe" },
+  eis     = { "Eis", 0.45, 0.78, 0.98 },
+  smaragd = { "Smaragd", 0.40, 0.85, 0.55 },
+}
+
+-- Ändert die Akzentfarbe an Ort und Stelle, damit alle Verweise auf QK.farben.gold mitziehen.
+function QK:AkzentAnwenden()
+  local a = self.AKZENTE[self.db and self.db.akzent or "gold"] or self.AKZENTE.gold
+  local r, g, b = a[2], a[3], a[4]
+  if not r then
+    local _, klasse = UnitClass("player")
+    local c = klasse and RAID_CLASS_COLORS and RAID_CLASS_COLORS[klasse]
+    if c then r, g, b = c.r, c.g, c.b else r, g, b = 0.95, 0.77, 0.35 end
+  end
+  local f = self.farben.gold
+  f[1], f[2], f[3] = r, g, b
+  local bl = self.farben.balken
+  bl[1], bl[2], bl[3] = r, g * 0.92, b * 0.75
+  self.gold = ("|cff%02x%02x%02x"):format(r * 255, g * 255, b * 255)
+end
 
 QK.STILE = {
   ruhig     = { name = "Ruhig",     hintergrund = 0.55, balken = true,  schrift = "normal", nurNaechstes = false, anzahl = 8 },
@@ -122,19 +158,55 @@ end
 
 -- Alle Module neu zeichnen (nach Änderungen in Assistent oder Einstellungen).
 function QK:Anwenden()
+  self:AkzentAnwenden()
   for _, m in ipairs(self.module) do
     if m.Anwenden then QK:Sicher(m.name, m.Anwenden, m) end
   end
+end
+
+-- Profile: Einstellungen gelten für alle Charaktere („konto“) oder nur für diesen („eigen“).
+-- Diagnose und Fehlerprotokoll bleiben immer kontoweit in QuestkompassDB.
+function QK:ProfilLaden()
+  local root, char = QuestkompassDB, QuestkompassCharDB
+  root.konto = root.konto or {}
+  if char.profil == "eigen" then
+    char.einstellungen = char.einstellungen or kopie(root.konto)
+    self.db = char.einstellungen
+  else
+    self.db = root.konto
+  end
+  self:Standardwerte(self.db)
+  self:AkzentAnwenden()
+end
+
+function QK:ProfilWechseln(art)
+  QuestkompassCharDB.profil = art
+  if art == "eigen" and not QuestkompassCharDB.einstellungen then
+    QuestkompassCharDB.einstellungen = kopie(self.db)
+  end
+  self:ProfilLaden()
+  self:Anwenden()
 end
 
 QK:Ereignis("ADDON_LOADED", function(name)
   if name ~= ADDON then return end
   QuestkompassDB = QuestkompassDB or {}
   QuestkompassCharDB = QuestkompassCharDB or {}
-  QK:Standardwerte(QuestkompassDB)
+  local root = QuestkompassDB
+  -- Einstellungen aus 0.1/0.2 (flach in QuestkompassDB) ins Kontoprofil übernehmen
+  if not root.konto then
+    root.konto = {}
+    for k in pairs(QK.STANDARD) do
+      if root[k] ~= nil then root.konto[k] = root[k]; root[k] = nil end
+    end
+    if type(root.konto.pos) == "table" and #root.konto.pos == 5 then root.konto.pos = nil end
+  end
   QuestkompassCharDB.ausgeblendet = QuestkompassCharDB.ausgeblendet or {}
-  QK.db = QuestkompassDB
+  QuestkompassCharDB.zugeklappt = QuestkompassCharDB.zugeklappt or {}
+  QuestkompassCharDB.tagebuch = QuestkompassCharDB.tagebuch or {}
+  QK.root = root
   QK.char = QuestkompassCharDB
+  QK:ProfilLaden()
 end)
 
 QK:Ereignis("PLAYER_LOGIN", function()
@@ -285,6 +357,8 @@ local HILFE = {
   "/qk einstellungen – alle Einstellungen",
   "/qk einrichten – Einrichtungsassistent erneut starten",
   "/qk gebiet [Name] – Gebietsfortschritt",
+  "/qk buch | welt | suche [Text] | tagebuch – Questbuch",
+  "/qk naechste – nächstgelegene Quest als Fokus",
   "/qk fokus – Fokus-Quest aufheben",
   "/qk einblenden – ausgeblendete Quests wieder zeigen",
   "/qk zuruecksetzen – alles auf Anfang",
@@ -298,8 +372,7 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
   befehl = befehl:lower()
   local db = QK.db
   if befehl == "" then
-    db.versteckt = not db.versteckt
-    QK:Anwenden()
+    QK.Tracker:Umschalten()
   elseif befehl == "hilfe" or befehl == "help" or befehl == "?" then
     QK:Meldung("Version %s, Questdaten vom %s", QK.version, QK.datenStand or "?")
     for _, zeile in ipairs(HILFE) do DEFAULT_CHAT_FRAME:AddMessage("  " .. zeile) end
@@ -309,6 +382,14 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
     QK.Assistent:Oeffnen(1)
   elseif befehl == "gebiet" or befehl == "zone" then
     QK.Gebiet:Zeigen(rest ~= "" and rest or nil)
+  elseif befehl == "buch" then
+    QK.Gebiet:Umschalten()
+  elseif befehl == "welt" or befehl == "tagebuch" then
+    QK.Gebiet:Reiter(befehl)
+  elseif befehl == "suche" then
+    QK.Gebiet:Reiter("suche", rest)
+  elseif befehl == "naechste" or befehl == "nächste" then
+    QK.Tracker:FokusNaechste()
   elseif befehl == "fokus" then
     QK.Compat:FokusSetzen(nil)
     QK:Anwenden()
@@ -318,22 +399,42 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
     QK:Anwenden()
     QK:Meldung("alle Quests sind wieder sichtbar.")
   elseif befehl == "zuruecksetzen" or befehl == "reset" then
-    local diag, fehler = db.diagnose, db.fehler
     wipe(db)
     QK:Standardwerte(db)
-    db.diagnose, db.fehler, db.eingerichtet = diag, fehler, true
+    db.eingerichtet = true
     QK:Anwenden()
     QK:Meldung("Einstellungen zurückgesetzt. /qk einrichten startet den Assistenten.")
   elseif befehl == "diagnose" then
     QK.Compat:Diagnose(true)
   elseif befehl == "fehler" then
-    if not db.fehler or #db.fehler == 0 then
+    local liste = QK.root.fehler
+    if not liste or #liste == 0 then
       QK:Meldung("keine Fehler aufgezeichnet.")
     else
-      QK:Meldung("die letzten %d Fehler:", #db.fehler)
-      for _, f in ipairs(db.fehler) do DEFAULT_CHAT_FRAME:AddMessage("  " .. f) end
+      QK:Meldung("die letzten %d Fehler:", #liste)
+      for _, f in ipairs(liste) do DEFAULT_CHAT_FRAME:AddMessage("  " .. f) end
     end
   else
     QK:Meldung("unbekannter Befehl. /qk hilfe zeigt alle Befehle.")
   end
+end
+
+---------------------------------------------------------------------------
+-- Tastenkürzel (Bindings.xml)
+---------------------------------------------------------------------------
+BINDING_HEADER_QUESTKOMPASS = "Questkompass"
+BINDING_NAME_QUESTKOMPASS_LISTE = "Liste ein- oder ausblenden"
+BINDING_NAME_QUESTKOMPASS_NAECHSTE = "Nächstgelegene Quest als Fokus"
+BINDING_NAME_QUESTKOMPASS_WEITER = "Fokus auf die nächste Quest der Liste"
+BINDING_NAME_QUESTKOMPASS_BUCH = "Questbuch öffnen"
+BINDING_NAME_QUESTKOMPASS_EINSTELLUNGEN = "Einstellungen öffnen"
+
+function QK:Taste(was)
+  QK:Sicher("Taste", function()
+    if was == "liste" then QK.Tracker:Umschalten()
+    elseif was == "naechste" then QK.Tracker:FokusNaechste(true)
+    elseif was == "weiter" then QK.Tracker:FokusWeiter()
+    elseif was == "buch" then QK.Gebiet:Umschalten()
+    elseif was == "einstellungen" then QK.Assistent:Oeffnen(2, true) end
+  end)
 end

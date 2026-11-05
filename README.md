@@ -4,13 +4,14 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 
 ## Was es kann
 
-- **Einrichtungsassistent** beim ersten Start: Stil, Lage, Verhalten und Helfer in vier Schritten, jede Wahl sofort sichtbar. Später derselbe Dialog als Einstellungsfenster.
-- **Zielliste** mit drei Stilen (Ruhig, Klassisch, Kompakt). Sortiert nach Entfernung, Zone oder Questlog, mit Fortschrittsbalken und „Bereit zum Abgeben“.
-- **Kompass:** Pfeil und Entfernung zu jedem Questziel auf der aktuellen Karte. Klick setzt die Quest als Fokus, das Spiel zeigt dann den Weg.
-- **Rechtsklick-Menü:** Fokus, im Questlog öffnen, Link, mit der Gruppe teilen, ausblenden.
-- **Ruhemodus:** im Kampf wird die Liste durchsichtig.
-- **Gebietsfortschritt** (Kartensymbol, Minikarten-Knopf mit Umschalt oder `/qk gebiet`): alle Quests einer Zone für deinen Charakter, erledigt, im Log oder offen.
-- **Kleine Helfer:** Meldung und Klang bei erfüllten Zielen, auf Wunsch automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp mit höchstem Händlerwert.
+- **Einrichtungsassistent** beim ersten Start, später derselbe Dialog als Einstellungsfenster: Stil, Akzentfarbe, Lage, Sortierung, Navigation, Helfer und Profil.
+- **Zielliste** in drei Stilen, sortiert nach Entfernung, Zone oder Questlog. Auf Wunsch mit einklappbaren Zonenüberschriften, Mausrad zum Blättern, Marken für Elite, Dungeon, täglich, „Neu“ und Gruppenmitglieder auf derselben Quest.
+- **Navigation:** kleiner Kompasspfeil an jeder Quest, großer schwebender Fokuspfeil mit Entfernung und Ankunftszeit, automatischer Fokus auf die nächste Quest.
+- **Questgegenstände** lassen sich direkt an der Quest benutzen. Quests mit Zeitlimit zeigen einen Countdown.
+- **Erfahrungsvorschau:** was die fertigen Quests zusammen bringen, und ob es für den Stufenaufstieg reicht.
+- **Questbuch** mit vier Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch) und Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde).
+- **Kleine Helfer:** Meldung und Klang bei Fortschritt, Fortschritt an die Gruppe, Warnung bei vollem Questlog, automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp, Knopf an der Minikarte.
+- **Profile** für alle Charaktere oder einzeln, **Tastenkürzel** unter „AddOns“ in den Tastenbelegungen.
 - **Quest-Tooltips:** Quest-Links im Chat zeigen Gebiet, Typ, Erfahrung und Ruf.
 
 ## Befehle
@@ -21,6 +22,9 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 | `/qk einstellungen` | Einstellungsfenster |
 | `/qk einrichten` | Einrichtungsassistent erneut starten |
 | `/qk gebiet [Name]` | Gebietsfortschritt |
+| `/qk buch` · `/qk welt` · `/qk tagebuch` | Questbuch |
+| `/qk suche Text` | Quest suchen |
+| `/qk naechste` | nächstgelegene Quest als Fokus |
 | `/qk fokus` | Fokus aufheben |
 | `/qk einblenden` | ausgeblendete Quests wieder zeigen |
 | `/qk zuruecksetzen` | alle Einstellungen zurücksetzen |

@@ -41,21 +41,38 @@ local function Klang()
   pcall(PlaySound, id or 878)
 end
 
+-- Fortschritt in den Gruppenchat (nur in kleinen Gruppen, nie im Schlachtzug).
+local letzteGruppenMeldung = 0
+local function Gruppe(text)
+  if not QK.db.gruppenMeldungen then return end
+  local inGruppe = (IsInGroup and IsInGroup()) or (GetNumPartyMembers and GetNumPartyMembers() > 0)
+  if not inGruppe or (IsInRaid and IsInRaid()) then return end
+  local jetzt = GetTime()
+  if jetzt - letzteGruppenMeldung < 1 then return end
+  letzteGruppenMeldung = jetzt
+  SendChatMessage("[Questkompass] " .. text, "PARTY")
+end
+
 local function Pruefen()
   local neu = {}
   for _, q in ipairs(QK.Compat:Questlog()) do
-    local s = { fertig = q.fertig, ziele = {} }
-    for i, z in ipairs(q.ziele) do s.ziele[i] = z.fertig end
+    local s = { fertig = q.fertig, ziele = {}, ist = {} }
+    for i, z in ipairs(q.ziele) do s.ziele[i] = z.fertig; s.ist[i] = z.ist end
     neu[q.id] = s
     local alt = stand and stand[q.id]
-    if alt and QK.db.meldungen then
+    if alt then
       if q.fertig and not alt.fertig then
-        M:Zeigen("BEREIT ZUM ABGEBEN", HAKEN .. q.titel)
-        Klang()
+        if QK.db.meldungen then M:Zeigen("BEREIT ZUM ABGEBEN", HAKEN .. q.titel); Klang() end
+        Gruppe(q.titel .. " ist fertig.")
       elseif not q.fertig then
         for i, z in ipairs(q.ziele) do
           if z.fertig and alt.ziele[i] == false then
-            M:Zeigen(q.titel, HAKEN .. z.text .. ((z.soll and z.soll > 1) and (" " .. z.soll .. "/" .. z.soll) or ""))
+            if QK.db.meldungen then
+              M:Zeigen(q.titel, HAKEN .. z.text .. ((z.soll and z.soll > 1) and (" " .. z.soll .. "/" .. z.soll) or ""))
+            end
+            Gruppe(("%s: %s erledigt"):format(q.titel, z.text))
+          elseif z.ist and alt.ist[i] and z.ist > alt.ist[i] and z.soll then
+            Gruppe(("%s: %s %d/%d"):format(q.titel, z.text, z.ist, z.soll))
           end
         end
       end

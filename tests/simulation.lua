@@ -61,6 +61,12 @@ local function Durchlauf(modern)
         GetEffectiveScale = function() return 1 end,
         IsMouseOver = function() return false end,
         GetPoint = function() return "TOPRIGHT", nil, "TOPRIGHT", -10, -200 end,
+        GetLeft = function() return 900 end,
+        GetRight = function() return 1140 end,
+        GetTop = function() return 600 end,
+        SetAttribute = function(s, k, v) s.attribute = s.attribute or {}; s.attribute[k] = v end,
+        EnableMouseWheel = function(s, v) s.mausrad = v end,
+        SetVertexColor = function() end,
       })[k]
       if f then return f end
       if type(k) == "string" and k:match("^%u") then return function() end end
@@ -97,6 +103,19 @@ local function Durchlauf(modern)
   local hooks = {}
   hooksecurefunc = function(a, b, c) if type(a) == "string" then hooks[a] = b else hooks[b] = c end end
   PlaySound = function() end
+  UnitLevel = function() return 5 end
+  UnitXP = function() return 1000 end
+  UnitXPMax = function() return 1500 end
+  GetUnitSpeed = function() return 7 end
+  UnitName = function(e) return e == "party1" and "Kumpel" or "Baumkuschler" end
+  local gruppe = 0
+  GetNumSubgroupMembers = function() return gruppe end
+  IsInGroup = function() return gruppe > 0 end
+  IsInRaid = function() return false end
+  local chat = {}
+  SendChatMessage = function(t, kanal) chat[#chat + 1] = kanal .. ":" .. t end
+  RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
+  time = os.time
   SOUNDKIT = { IG_QUEST_LIST_COMPLETE = 1 }
 
   local fraktion, klasse, volk = modern and "Horde" or "Alliance", 1, modern and 6 or 1
@@ -201,7 +220,7 @@ local function Durchlauf(modern)
   pruefe(QK.Compat.modern == modern, "richtige Quest-API erkannt")
   pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent öffnet beim ersten Start")
   pruefe(enthaelt("Willkommen") and enthaelt("Los geht’s"), "Willkommensseite")
-  for i = 1, 6 do
+  for i = 1, 8 do
     alleTexte = {}
     QK.Assistent:Oeffnen(i)
   end
@@ -236,6 +255,7 @@ local function Durchlauf(modern)
     pruefe(QuestWatchFrame.gezeigt == false, "Questverfolgung des Spiels ausgeblendet")
   end
 
+  QK.Compat:FokusSetzen(nil)
   QK.db.modus = "verfolgt"
   alleTexte = {}
   QK.Tracker:Aktualisieren()
@@ -313,6 +333,80 @@ local function Durchlauf(modern)
   local alles = table.concat(zeilen, "|")
   pruefe(alles:find("Gebiet=Wald von Elwynn", 1, true) and alles:find("Erfahrung=875 EP", 1, true), "Quest-Tooltip")
 
+  -- 0.3: Profile, Akzent, Gruppen, Mausrad, EP-Vorschau, Tagebuch, Welt, Suche
+  QK.db.akzent = "klasse"
+  QK:Anwenden()
+  pruefe(math.abs(QK.farben.gold[1] - 0.78) < 0.01, "Akzentfarbe Klassenfarbe")
+  QK.db.akzent = "gold"
+  QK:Anwenden()
+  QK.db.breite = 300
+  QK:ProfilWechseln("eigen")
+  QK.db.breite = 222
+  QK:ProfilWechseln("konto")
+  pruefe(QK.db.breite == 300 and QuestkompassCharDB.einstellungen.breite == 222, "Profile getrennt")
+  QK.db.gruppen = true
+  alleTexte = {}
+  QK.Tracker:Aktualisieren()
+  pruefe(enthaelt(modern and "– MULGORE" or "– WALD VON ELWYNN"), "Zonenüberschriften")
+  QK.char.zugeklappt[modern and "Mulgore" or "Wald von Elwynn"] = true
+  alleTexte = {}
+  QK.Tracker:Aktualisieren()
+  pruefe(enthaelt(modern and "+ MULGORE" or "+ WALD VON ELWYNN") and not enthaelt(modern and "Riten" or "GESUCHT"), "Gruppe zuklappen")
+  QK.char.zugeklappt = {}
+  QK.db.gruppen = false
+  QK.db.anzahl = 1
+  alleTexte = {}
+  QK.Tracker:Aktualisieren()
+  pruefe(QuestkompassListe.mausrad == true and enthaelt("2 weitere"), "Mausrad bei langen Listen")
+  QuestkompassListe.skripte.OnMouseWheel(QuestkompassListe, -1)
+  pruefe(enthaelt("1 weiter oben"), "Mausrad blättert")
+  QK.db.anzahl = 8
+  QK.Tracker:Aktualisieren()
+  alleTexte = {}
+  QK.Tracker:Aktualisieren()
+  pruefe(enthaelt("EP bereit"), "Erfahrungsvorschau")
+  gruppe = 1
+  if modern then C_QuestLog.IsUnitOnQuest = function(_, id) return id == 776 end
+  else IsUnitOnQuest = function(i) return i == 2 end end
+  alleTexte = {}
+  QK.Tracker:Aktualisieren()
+  pruefe(enthaelt("[1]"), "Gruppenmitglied mit derselben Quest")
+  QK.db.gruppenMeldungen = true
+  if modern then log[3].ziele[1][3] = false; log[3].ziele[1][4] = 2; C_QuestLog.IsComplete = function(id) return id == 790 end
+  else log[3].ziele[1][1] = "Flusspfotenhalstuch: 4/8"; log[3].ziele[1][3] = false end
+  feuern("QUEST_LOG_UPDATE")
+  if modern then log[3].ziele[1][4] = 3 else log[3].ziele[1][1] = "Flusspfotenhalstuch: 5/8" end
+  feuern("QUEST_LOG_UPDATE")
+  pruefe(#chat > 0 and chat[#chat]:find("PARTY", 1, true), "Fortschritt an die Gruppe: " .. tostring(chat[#chat]))
+  gruppe = 0
+  if modern then
+    C_QuestLog.GetTimeAllowed = function(id) if id == 776 then return 600, 100 end end
+    alleTexte = {}
+    QK.Tracker:Aktualisieren()
+    pruefe(enthaelt("Zeit: 8:20"), "Countdown bei Zeitlimit")
+    GetQuestLogSpecialItemInfo = function(i) if i == 2 then return "|Hitem:5099|h[Horn]|h", 134400, 1, false end end
+    QK.Tracker:Aktualisieren()
+    pruefe(QuestkompassGegenstand1 and QuestkompassGegenstand1.gezeigt and QuestkompassGegenstand1.attribute.item == "item:5099", "Knopf für Questgegenstand")
+    QK.Compat:FokusSetzen(750)
+    QK.Tracker:Aktualisieren()
+    pruefe(QuestkompassPfeil.gezeigt and enthaelt("Die Jagd geht weiter"), "großer Fokuspfeil")
+  end
+  feuern("QUEST_TURNED_IN", modern and 776 or 176, 1250, 0)
+  pruefe(#QK.char.tagebuch == 1 and QK.char.tagebuch[1].ep == 1250, "Tagebuch-Eintrag")
+  alleTexte = {}
+  QK.Gebiet:Reiter("tagebuch")
+  pruefe(enthaelt("Diese Sitzung: 1 Quests"), "Sitzungsstatistik")
+  alleTexte = {}
+  QK.Gebiet:Reiter("welt")
+  pruefe(enthaelt("Gebieten"), "Weltübersicht")
+  alleTexte = {}
+  QK.Gebiet:Reiter("suche", "hogger")
+  pruefe(modern and enthaelt("Nichts gefunden") or (not modern and enthaelt("GESUCHT")), "Suche (Hogger nur für Allianz)")
+  QK.Gebiet:Reiter("suche", "jagd")
+  for _, t in ipairs({ "liste", "liste", "naechste", "weiter", "buch", "einstellungen" }) do Questkompass:Taste(t) end
+  Timer()
+  pruefe(BINDING_NAME_QUESTKOMPASS_NAECHSTE ~= nil, "Tastenkürzel")
+
   -- Befehle
   for _, b in ipairs({ "", "", "hilfe", "einstellungen", "einrichten", "gebiet", "gebiet Westfall", "gebiet Atlantis",
       "fokus", "einblenden", "diagnose", "fehler", "zuruecksetzen", "quatsch" }) do
@@ -320,8 +414,8 @@ local function Durchlauf(modern)
     Timer()
     pruefe(ok, "/qk " .. b .. (ok and "" or (" → " .. tostring(err))))
   end
-  pruefe(QK.db.diagnose and QK.db.diagnose.interface == (modern and 16001 or 11507), "Diagnose gespeichert")
-  pruefe(not QK.db.fehler or #QK.db.fehler == 0, "keine Fehler im Protokoll" .. ((QK.db.fehler and QK.db.fehler[1]) and (": " .. QK.db.fehler[1]) or ""))
+  pruefe(QK.root.diagnose and QK.root.diagnose.interface == (modern and 16001 or 11507), "Diagnose gespeichert")
+  pruefe(not QK.root.fehler or #QK.root.fehler == 0, "keine Fehler im Protokoll" .. ((QK.root.fehler and QK.root.fehler[1]) and (": " .. QK.root.fehler[1]) or ""))
 end
 
 Durchlauf(true)
