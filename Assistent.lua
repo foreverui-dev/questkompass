@@ -266,6 +266,7 @@ function A:Auffrischen()
     p:SetSize(i == seite and 18 or 8, 4)
   end
   zurueck:SetShown(seite > 1)
+  fenster.fertig:SetShown(seite < #seiten)
   if seite == #seiten then
     weiter:SetText("Fertig")
   elseif seite == 1 and not alsEinstellungen then
@@ -347,7 +348,6 @@ function A:Oeffnen(start, einstellungen)
   if not fenster then Erstellen() end
   alsEinstellungen = einstellungen and true or false
   seite = math.max(1, math.min(start or 1, #seiten))
-  fenster.fertig:SetShown(true)
   fenster:Show()
   if QK.db.versteckt then QK.db.versteckt = false; QK:Anwenden() end
   A:Auffrischen()

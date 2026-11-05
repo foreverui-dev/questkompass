@@ -255,7 +255,10 @@ function T:Aktualisieren()
       if q.stufe and q.stufe > 0 then
         titel = ("[%d%s] %s"):format(q.stufe, (q.gruppe and q.gruppe > 0) and "+" or "", q.titel)
       end
-      if not q.hier and q.zone then titel = titel .. " |cff8c8c8c· " .. q.zone .. "|r" end
+      -- Zonenname nur, wenn die Quest weder hier liegt noch eine Entfernung hat.
+      if not q.hier and q.zone and not QK.Kompass:Entfernung(q.id) then
+        titel = titel .. " |cff8c8c8c· " .. q.zone .. "|r"
+      end
       local z, h = Zeile("titel", titel, Stufenfarbe(q.stufe), q, y)
       z.pfeilAn = db.pfeil
       if q.id == fokus then z.fokus:Show() end
