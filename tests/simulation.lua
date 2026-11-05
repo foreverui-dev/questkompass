@@ -56,7 +56,7 @@ local function Durchlauf(modern)
         SetChecked = function(s, v) s.an = v end,
         GetChecked = function(s) return s.an end,
         GetStringWidth = function() return 80 end,
-        GetWidth = function() return 140 end,
+        GetWidth = function(s) return s.breite or 140 end,
         GetCenter = function() return 500, 500 end,
         GetEffectiveScale = function() return 1 end,
         IsMouseOver = function() return false end,

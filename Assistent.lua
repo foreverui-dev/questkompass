@@ -325,6 +325,28 @@ end
 ---------------------------------------------------------------------------
 -- Fenster
 ---------------------------------------------------------------------------
+-- Knöpfe mittig nebeneinander, Seitenpunkte mittig darunter.
+function A:Anordnen()
+  local sichtbar = {}
+  for _, b in ipairs({ fenster.fertig, zurueck, weiter }) do
+    if b:IsShown() then sichtbar[#sichtbar + 1] = b end
+  end
+  local breite = -8
+  for _, b in ipairs(sichtbar) do breite = breite + b:GetWidth() + 8 end
+  local x = -breite / 2
+  for _, b in ipairs(sichtbar) do
+    b:ClearAllPoints()
+    b:SetPoint("BOTTOMLEFT", fenster, "BOTTOM", x, 30)
+    x = x + b:GetWidth() + 8
+  end
+  local abstand = 22
+  local start = -((#punkte - 1) * abstand) / 2
+  for i, p in ipairs(punkte) do
+    p:ClearAllPoints()
+    p:SetPoint("BOTTOM", fenster, "BOTTOM", start + (i - 1) * abstand, 14)
+  end
+end
+
 function A:Auffrischen()
   if not fenster then return end
   fenster:SetScale(QK:Groesse())
@@ -340,6 +362,7 @@ function A:Auffrischen()
   end
   zurueck:SetShown(seite > 1)
   fenster.fertig:SetShown(seite < #seiten)
+  A:Anordnen()
   if seite == #seiten then
     weiter:SetText("Fertig")
   elseif seite == 1 and not alsEinstellungen then
@@ -381,7 +404,7 @@ local function Erstellen()
 
   inhalt = CreateFrame("Frame", nil, fenster)
   inhalt:SetPoint("TOPLEFT", 24, -84)
-  inhalt:SetPoint("BOTTOMRIGHT", -24, 56)
+  inhalt:SetPoint("BOTTOMRIGHT", -24, 64)
 
   SeitenBauen()
 
@@ -391,7 +414,6 @@ local function Erstellen()
     p:SetSize(8, 4)
     p.t = p:CreateTexture(nil, "ARTWORK")
     p.t:SetAllPoints()
-    p:SetPoint("BOTTOMLEFT", 24 + (i - 1) * 26, 28)
     p:SetHitRectInsets(-4, -4, -8, -8)
     p:SetScript("OnClick", function() seite = i; A:Auffrischen() end)
     punkte[i] = p
@@ -399,18 +421,15 @@ local function Erstellen()
 
   weiter = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
   weiter:SetSize(110, 24)
-  weiter:SetPoint("BOTTOMRIGHT", -20, 16)
   weiter:SetScript("OnClick", function()
     if seite < #seiten then seite = seite + 1; A:Auffrischen() else A:Schliessen() end
   end)
   zurueck = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
   zurueck:SetSize(90, 24)
-  zurueck:SetPoint("RIGHT", weiter, "LEFT", -8, 0)
   zurueck:SetText("Zurück")
   zurueck:SetScript("OnClick", function() if seite > 1 then seite = seite - 1; A:Auffrischen() end end)
   local fertig = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
   fertig:SetSize(90, 24)
-  fertig:SetPoint("RIGHT", zurueck, "LEFT", -8, 0)
   fertig:SetText("Fertig")
   fertig:SetScript("OnClick", function() A:Schliessen() end)
   fenster.fertig = fertig
