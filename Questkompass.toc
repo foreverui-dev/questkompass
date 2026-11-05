@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: Questkompass
-## Notes: Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever.
-## Notes-deDE: Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever.
+## Notes: Ruhige Questliste mit Kompass, Gebietsfortschritt und Einrichtungsassistent für WoW Forever.
+## Notes-deDE: Ruhige Questliste mit Kompass, Gebietsfortschritt und Einrichtungsassistent für WoW Forever.
 ## Author: Syntaxlab
 ## Version: @project-version@
 ## SavedVariables: QuestkompassDB
@@ -12,7 +12,13 @@
 ## X-Curse-Project-ID: 1785214
 
 Core.lua
+Compat.lua
 Daten\Quests.lua
+Kompass.lua
 Tracker.lua
 Gebiet.lua
 Tooltip.lua
+Meldungen.lua
+Automatik.lua
+Assistent.lua
+MinimapKnopf.lua

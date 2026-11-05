@@ -1,7 +1,6 @@
 -- Questkompass: zusätzliche Zeilen in Quest-Tooltips (Chat-Links, Zielliste, Gebietsfenster).
 local _, QK = ...
-local TT = {}
-QK.Tooltip = TT
+local TT = QK:Modul("Tooltip")
 
 -- Fügt Gebiet, Typ, Erfahrung und Ruf zu einem Tooltip hinzu.
 -- ohneTitel: true, wenn der Aufrufer den Questnamen schon gesetzt hat.
@@ -29,7 +28,7 @@ function TT:Ergaenzen(tooltip, questID, ohneTitel)
         0.6, 0.6, 0.6, 0.45, 0.85, 0.45)
     end
   end
-  if QK:IstErledigt(questID) then
+  if QK.Compat:IstErledigt(questID) then
     tooltip:AddLine("Bereits erledigt", 0.45, 0.85, 0.45)
   end
   return true

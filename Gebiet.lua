@@ -1,8 +1,7 @@
 -- Questkompass: Gebietsfortschritt. Zeigt, welche Quests es in einer Zone gibt,
 -- welche erledigt sind, welche im Log stehen und welche noch offen sind.
 local _, QK = ...
-local G = {}
-QK.Gebiet = G
+local G = QK:Modul("Gebiet")
 
 local ZEILE = 16
 local HAKEN = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12:0:0|t"
@@ -32,14 +31,14 @@ end
 -- Quests eines Gebiets mit Status: 1 = im Log, 2 = offen, 3 = erledigt
 function G:Liste(id)
   local imLog = {}
-  for _, q in ipairs(QK:Questlog()) do
+  for _, q in ipairs(QK.Compat:Questlog()) do
     if q.id then imLog[q.id] = true end
   end
   local liste = {}
   for _, qid in ipairs(QK:QuestsImGebiet(id)) do
     local q = QK:Quest(qid)
     if QK:PasstZumCharakter(q) then
-      q.status = imLog[qid] and 1 or (QK:IstErledigt(qid) and 3 or 2)
+      q.status = imLog[qid] and 1 or (QK.Compat:IstErledigt(qid) and 3 or 2)
       liste[#liste + 1] = q
     end
   end
@@ -76,7 +75,7 @@ local function NeueZeile()
     QK.Tooltip:Ergaenzen(GameTooltip, q.id, true)
     GameTooltip:Show()
   end)
-  z:SetScript("OnLeave", GameTooltip_Hide)
+  z:SetScript("OnLeave", function() GameTooltip:Hide() end)
   return z
 end
 
@@ -185,7 +184,22 @@ local function Erstellen()
 
   local zurueck = Knopf("<", 24, function() Blaettern(-1) end)
   zurueck:SetPoint("TOPRIGHT", -62, -30)
-  local hier = Knopf("Hier", 34, function() folgen = true; gebietID = nil; G:Aktualisieren() end)
+  local hier = Knopf("Hier", 34, function()
+    -- Mehrfach klicken wechselt zwischen den Gebieten rund um den Charakter.
+    local liste = QK:GebieteHier()
+    local pos = 0
+    for i, id in ipairs(liste) do if id == gebietID then pos = i end end
+    gebietID = liste[(pos % math.max(1, #liste)) + 1]
+    folgen = false
+    G:Aktualisieren()
+  end)
+  hier:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine("Gebiete hier", unpack(QK.farben.gold))
+    GameTooltip:AddLine("Mehrfach klicken wechselt zwischen Zone, Teilgebiet und den Gebieten deiner Quests.", 0.8, 0.8, 0.8, true)
+    GameTooltip:Show()
+  end)
+  hier:SetScript("OnLeave", function() GameTooltip:Hide() end)
   hier:SetPoint("LEFT", zurueck, "RIGHT", 2, 0)
   local weiter = Knopf(">", 24, function() Blaettern(1) end)
   weiter:SetPoint("LEFT", hier, "RIGHT", 2, 0)
@@ -201,6 +215,8 @@ local function Erstellen()
   balken:SetPoint("TOPLEFT", 14, -78)
   balken:SetPoint("TOPRIGHT", -14, -78)
   balken:SetHeight(14)
+  balken:SetMinMaxValues(0, 1)
+  balken:SetValue(0)
   local hg = balken:CreateTexture(nil, "BACKGROUND")
   hg:SetAllPoints()
   hg:SetColorTexture(1, 1, 1, 0.08)
@@ -221,7 +237,7 @@ local function Erstellen()
   fuss:SetJustifyH("LEFT")
   fuss:SetText(("Daten: Blizzard Entertainment, Stand %s · foreverui.de"):format(QK.datenStand or "?"))
 
-  fenster:SetScript("OnShow", function() G:Aktualisieren() end)
+  fenster:SetScript("OnShow", function() QK:Sicher("Gebiet", G.Aktualisieren, G) end)
   fenster:Hide()
 end
 
@@ -238,7 +254,7 @@ function G:Zeigen(name)
     gebietID, folgen = nil, true
   end
   fenster:Show()
-  G:Aktualisieren()
+  QK:Sicher("Gebiet", G.Aktualisieren, G)
 end
 
 function G:Umschalten()
@@ -246,14 +262,17 @@ function G:Umschalten()
 end
 
 function G:Start()
-  local f = CreateFrame("Frame")
-  f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-  f:RegisterEvent("QUEST_LOG_UPDATE")
-  f:RegisterEvent("QUEST_TURNED_IN")
   local geplant = false
-  f:SetScript("OnEvent", function()
+  local function planen()
     if geplant or not fenster or not fenster:IsShown() then return end
     geplant = true
-    C_Timer.After(0.5, function() geplant = false; G:Aktualisieren() end)
-  end)
+    C_Timer.After(0.5, function() geplant = false; QK:Sicher("Gebiet", G.Aktualisieren, G) end)
+  end
+  QK:Ereignis("ZONE_CHANGED_NEW_AREA", planen)
+  QK:Ereignis("QUEST_LOG_UPDATE", planen)
+  QK:Ereignis("QUEST_TURNED_IN", planen)
+end
+
+function G:Anwenden()
+  if fenster and fenster:IsShown() then G:Aktualisieren() end
 end

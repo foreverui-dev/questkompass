@@ -1,8 +1,9 @@
--- Questkompass: Grundgerüst, Einstellungen, Questdaten-Helfer und Befehle.
+-- Questkompass: Grundgerüst, Einstellungen, Fehlerprotokoll, Ereignisse und Befehle.
 local ADDON, QK = ...
 _G.Questkompass = QK
 
-QK.version = (C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata)(ADDON, "Version") or "dev"
+local metadaten = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+QK.version = (metadaten and metadaten(ADDON, "Version")) or "dev"
 if QK.version:find("@") then QK.version = "dev" end
 
 QK.farben = {
@@ -10,37 +11,144 @@ QK.farben = {
   hell   = { 0.93, 0.91, 0.86 },
   grau   = { 0.55, 0.55, 0.55 },
   gruen  = { 0.45, 0.85, 0.45 },
+  rot    = { 0.90, 0.35, 0.30 },
   balken = { 0.95, 0.70, 0.25 },
 }
 QK.gold = "|cfff2c45a"
 
-local STANDARD = {
-  pos = { "TOPRIGHT", "Minimap", "BOTTOMRIGHT", 0, -28 },
+QK.STANDARD = {
+  eingerichtet = false,     -- Assistent schon durchlaufen?
+  stil = "ruhig",           -- ruhig | klassisch | kompakt
+  lage = "minimap",         -- minimap | rechts | links | frei
+  pos = nil,                -- bei lage = frei: { punkt, relPunkt, x, y }
   gesperrt = false,
-  modus = "alle",          -- "alle" oder "verfolgt"
+  modus = "alle",           -- alle | verfolgt
+  sortierung = "entfernung",-- entfernung | zone | log
   anzahl = 8,
+  breite = 240,
+  skalierung = 1,
   ruhemodus = true,
   ruheAlpha = 0.35,
   blizzardAusblenden = true,
-  breite = 230,
-  skalierung = 1,
+  pfeil = true,             -- Kompasspfeil an jeder Quest
+  meldungen = true,         -- Fortschritt in der Bildschirmmitte
+  klang = true,             -- Klang bei fertiger Quest
+  autoAnnehmen = false,
+  autoAbgeben = false,
+  belohnungsTipp = true,
+  minimapKnopf = true,
+  minimapWinkel = 200,
   gebietPos = nil,
+  versteckt = false,
 }
 
-local function fuelle(ziel, vorlage)
-  for k, v in pairs(vorlage) do
-    if ziel[k] == nil then
-      ziel[k] = type(v) == "table" and CopyTable(v) or v
-    end
+QK.STILE = {
+  ruhig     = { name = "Ruhig",     hintergrund = 0.55, balken = true,  schrift = "normal", nurNaechstes = false, anzahl = 8 },
+  klassisch = { name = "Klassisch", hintergrund = 0,    balken = false, schrift = "gross",  nurNaechstes = false, anzahl = 10 },
+  kompakt   = { name = "Kompakt",   hintergrund = 0.35, balken = true,  schrift = "klein",  nurNaechstes = true,  anzahl = 12 },
+}
+
+local function kopie(v)
+  if type(v) ~= "table" then return v end
+  local t = {}
+  for k, w in pairs(v) do t[k] = kopie(w) end
+  return t
+end
+QK.Kopie = kopie
+
+function QK:Standardwerte(ziel)
+  for k, v in pairs(self.STANDARD) do
+    if ziel[k] == nil then ziel[k] = kopie(v) end
   end
 end
 
+function QK:Stil()
+  return self.STILE[self.db.stil] or self.STILE.ruhig
+end
+
 function QK:Meldung(text, ...)
-  DEFAULT_CHAT_FRAME:AddMessage(QK.gold .. "Questkompass:|r " .. text:format(...))
+  DEFAULT_CHAT_FRAME:AddMessage(QK.gold .. "Questkompass:|r " .. (select("#", ...) > 0 and text:format(...) or text))
 end
 
 ---------------------------------------------------------------------------
--- Questdaten
+-- Fehlerprotokoll: Fehler im Addon sollen nie die Oberfläche lahmlegen.
+---------------------------------------------------------------------------
+local gemeldet = false
+function QK:Sicher(name, fn, ...)
+  local ok, fehler = pcall(fn, ...)
+  if not ok then
+    local db = QuestkompassDB
+    if db then
+      db.fehler = db.fehler or {}
+      local eintrag = ("%s: %s"):format(name, tostring(fehler))
+      if db.fehler[#db.fehler] ~= eintrag then
+        table.insert(db.fehler, eintrag)
+        while #db.fehler > 20 do table.remove(db.fehler, 1) end
+      end
+    end
+    if not gemeldet then
+      gemeldet = true
+      QK:Meldung("|cffe05a4dEin Fehler ist aufgetreten (%s).|r /qk fehler zeigt Details.", name)
+    end
+  end
+  return ok
+end
+
+---------------------------------------------------------------------------
+-- Ereignisse: Module melden sich mit QK:Ereignis(name, funktion) an.
+---------------------------------------------------------------------------
+local verteiler = CreateFrame("Frame")
+local empfaenger = {}
+function QK:Ereignis(ereignis, fn)
+  if not empfaenger[ereignis] then
+    empfaenger[ereignis] = {}
+    pcall(verteiler.RegisterEvent, verteiler, ereignis)
+  end
+  table.insert(empfaenger[ereignis], fn)
+end
+verteiler:SetScript("OnEvent", function(_, ereignis, ...)
+  for _, fn in ipairs(empfaenger[ereignis] or {}) do
+    QK:Sicher(ereignis, fn, ...)
+  end
+end)
+
+QK.module = {}
+function QK:Modul(name)
+  local m = { name = name }
+  self.module[#self.module + 1] = m
+  QK[name] = m
+  return m
+end
+
+-- Alle Module neu zeichnen (nach Änderungen in Assistent oder Einstellungen).
+function QK:Anwenden()
+  for _, m in ipairs(self.module) do
+    if m.Anwenden then QK:Sicher(m.name, m.Anwenden, m) end
+  end
+end
+
+QK:Ereignis("ADDON_LOADED", function(name)
+  if name ~= ADDON then return end
+  QuestkompassDB = QuestkompassDB or {}
+  QuestkompassCharDB = QuestkompassCharDB or {}
+  QK:Standardwerte(QuestkompassDB)
+  QuestkompassCharDB.ausgeblendet = QuestkompassCharDB.ausgeblendet or {}
+  QK.db = QuestkompassDB
+  QK.char = QuestkompassCharDB
+end)
+
+QK:Ereignis("PLAYER_LOGIN", function()
+  if QK.Compat then QK:Sicher("Diagnose", QK.Compat.Diagnose, QK.Compat) end
+  for _, m in ipairs(QK.module) do
+    if m.Start then QK:Sicher(m.name, m.Start, m) end
+  end
+  if not QK.db.eingerichtet and QK.Assistent then
+    C_Timer.After(2, function() QK:Sicher("Assistent", QK.Assistent.Oeffnen, QK.Assistent, 1) end)
+  end
+end)
+
+---------------------------------------------------------------------------
+-- Questdaten aus der Blizzard-API (Daten/Quests.lua)
 ---------------------------------------------------------------------------
 local englisch = GetLocale() ~= "deDE"
 
@@ -52,7 +160,6 @@ local function lokal(paar)
 end
 QK.Lokal = lokal
 
--- Liefert eine aufbereitete Tabelle zu einer Quest-ID oder nil.
 function QK:Quest(id)
   local q = id and self.quests and self.quests[id]
   if not q then return nil end
@@ -70,7 +177,6 @@ function QK:Quest(id)
   }
 end
 
--- Quest-IDs je Gebiet, einmalig aufgebaut.
 function QK:QuestsImGebiet(id)
   if not self.gebietQuests then
     self.gebietQuests = {}
@@ -86,11 +192,10 @@ function QK:QuestsImGebiet(id)
   return self.gebietQuests[id] or {}
 end
 
-function QK:GebietName(id) return lokal(self.gebiete[id]) end
+function QK:GebietName(id) return id and lokal(self.gebiete[id]) end
 function QK:TypName(id) return id and lokal(self.typen[id]) end
 function QK:FraktionName(id) return lokal(self.fraktionen[id]) or ("#" .. id) end
 
--- Gebiets-ID zu einem Zonennamen (deutsch oder englisch).
 function QK:GebietZuName(name)
   if not name or name == "" then return nil end
   if not self.gebietIndex then
@@ -104,15 +209,9 @@ function QK:GebietZuName(name)
   return self.gebietIndex[name:lower()]
 end
 
--- Teilgebiete mit eigenen Quests (z. B. Nordhaintal in Elwynn) haben Vorrang.
-function QK:AktuellesGebiet()
-  local _, teil, zone = self:AktuelleGebiete()
-  return teil or zone
-end
-
--- Liefert eine Menge der Gebiets-IDs, in denen der Charakter gerade steht.
+-- Liefert die Menge der Gebiets-IDs, in denen der Charakter steht, plus Teil- und Hauptgebiet.
 function QK:AktuelleGebiete()
-  local zone = self:GebietZuName(GetRealZoneText()) or self:GebietZuName(GetZoneText())
+  local zone = self:GebietZuName(GetRealZoneText and GetRealZoneText()) or self:GebietZuName(GetZoneText and GetZoneText())
   local teil = GetSubZoneText and self:GebietZuName(GetSubZoneText()) or nil
   local menge = {}
   if zone then menge[zone] = true end
@@ -120,7 +219,32 @@ function QK:AktuelleGebiete()
   return menge, teil, zone
 end
 
--- Passt eine Quest zu Fraktion, Klasse und Volk des Charakters?
+-- Gehört eine Quest aus dem Log zur Gegend, in der der Charakter steht?
+-- Zählt das Questgebiet aus den Daten oder die Überschrift im Questlog.
+function QK:IstHier(q, hier)
+  if q.gebiet and hier[q.gebiet] then return true end
+  local zone = GetRealZoneText and GetRealZoneText()
+  return q.zone ~= nil and (q.zone == zone or q.zone == (GetSubZoneText and GetSubZoneText()))
+end
+
+-- Gebiete, die gerade in Frage kommen: Zone, Teilzone und Gebiete der Quests unter der Zonenüberschrift.
+function QK:GebieteHier()
+  local menge, teil, zone = self:AktuelleGebiete()
+  local liste, gesehen = {}, {}
+  local function dazu(id) if id and not gesehen[id] then gesehen[id] = true; liste[#liste + 1] = id end end
+  dazu(teil); dazu(zone)
+  for _, q in ipairs(self.Compat:Questlog()) do
+    if self:IstHier(q, menge) then dazu(q.gebiet) end
+  end
+  return liste
+end
+
+-- Teilgebiete mit eigenen Quests (z. B. Nordhaintal in Elwynn) haben Vorrang.
+function QK:AktuellesGebiet()
+  local _, teil, zone = self:AktuelleGebiete()
+  return teil or zone
+end
+
 function QK:PasstZumCharakter(q)
   if q.fraktion then
     local f = UnitFactionGroup("player")
@@ -139,104 +263,32 @@ function QK:PasstZumCharakter(q)
   return true
 end
 
-function QK:IstErledigt(id)
-  if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
-    return C_QuestLog.IsQuestFlaggedCompleted(id)
-  elseif IsQuestFlaggedCompleted then
-    return IsQuestFlaggedCompleted(id)
-  end
-  return false
-end
-
 function QK:EPText(ep)
   if not ep or ep <= 0 then return nil end
   return (BreakUpLargeNumbers and BreakUpLargeNumbers(ep) or tostring(ep)) .. " EP"
 end
 
----------------------------------------------------------------------------
--- Questlog lesen (Classic-Questlog-API)
----------------------------------------------------------------------------
-local function ziele(index, questID)
-  local liste = {}
-  local anzahl = GetNumQuestLeaderBoards(index) or 0
-  for j = 1, anzahl do
-    local text, art, fertig = GetQuestLogLeaderBoard(j, index)
-    if text then
-      local name, ist, soll = text:match("^(.-):%s*(%d+)%s*/%s*(%d+)%s*$")
-      liste[#liste + 1] = {
-        text = name or text,
-        ist = tonumber(ist),
-        soll = tonumber(soll),
-        fertig = fertig and true or false,
-        art = art,
-      }
-    end
-  end
-  return liste
-end
-
--- Gibt alle Quests im Questlog zurück, jeweils mit Zone (Überschrift) und Zielen.
-function QK:Questlog()
-  local quests = {}
-  local zone
-  local n = GetNumQuestLogEntries() or 0
-  for i = 1, n do
-    local titel, stufe, gruppe, istUeberschrift, _, fertig, _, questID = GetQuestLogTitle(i)
-    if istUeberschrift then
-      zone = titel
-    elseif titel then
-      local daten = self:Quest(questID)
-      quests[#quests + 1] = {
-        index = i,
-        id = questID,
-        titel = titel,
-        stufe = stufe,
-        gruppe = gruppe,
-        zone = zone,
-        gebiet = (daten and daten.gebiet) or self:GebietZuName(zone),
-        fertig = fertig == 1 or fertig == true,
-        gescheitert = fertig == -1,
-        verfolgt = IsQuestWatched and IsQuestWatched(i) or false,
-        ziele = ziele(i, questID),
-        daten = daten,
-      }
-    end
-  end
-  return quests
+-- Entfernung in Yards als lesbarer Text in Metern.
+function QK:EntfernungText(yards)
+  if not yards then return nil end
+  local m = yards * 0.9144
+  if m >= 1000 then return (("%.1f km"):format(m / 1000):gsub("%.", ",")) end
+  if m >= 100 then return ("%d m"):format(math.floor(m / 10 + 0.5) * 10) end
+  return ("%d m"):format(math.floor(m + 0.5))
 end
 
 ---------------------------------------------------------------------------
--- Start und Befehle
+-- Befehle
 ---------------------------------------------------------------------------
-local ereignisse = CreateFrame("Frame")
-ereignisse:RegisterEvent("ADDON_LOADED")
-ereignisse:RegisterEvent("PLAYER_LOGIN")
-ereignisse:SetScript("OnEvent", function(_, ereignis, name)
-  if ereignis == "ADDON_LOADED" and name == ADDON then
-    QuestkompassDB = QuestkompassDB or {}
-    QuestkompassCharDB = QuestkompassCharDB or {}
-    fuelle(QuestkompassDB, STANDARD)
-    QuestkompassCharDB.ausgeblendet = QuestkompassCharDB.ausgeblendet or {}
-    QK.db = QuestkompassDB
-    QK.char = QuestkompassCharDB
-  elseif ereignis == "PLAYER_LOGIN" then
-    if QK.Tracker then QK.Tracker:Start() end
-    if QK.Gebiet then QK.Gebiet:Start() end
-    if QK.Tooltip then QK.Tooltip:Start() end
-  end
-end)
-
 local HILFE = {
   "/qk – Zielliste ein- oder ausblenden",
-  "/qk gebiet [Name] – Gebietsfortschritt (aktuelle Zone oder Name)",
-  "/qk alle | verfolgt – alle Quests oder nur verfolgte zeigen",
-  "/qk anzahl <1-25> – wie viele Quests die Liste zeigt",
-  "/qk sperren | entsperren – Liste fixieren oder verschiebbar machen",
-  "/qk ruhe – Ruhemodus im Kampf an/aus",
-  "/qk blizzard – Blizzard-Questverfolgung zeigen/ausblenden",
-  "/qk breite <160-400> | groesse <50-200> – Breite in Pixeln, Größe in Prozent",
+  "/qk einstellungen – alle Einstellungen",
+  "/qk einrichten – Einrichtungsassistent erneut starten",
+  "/qk gebiet [Name] – Gebietsfortschritt",
+  "/qk fokus – Fokus-Quest aufheben",
   "/qk einblenden – ausgeblendete Quests wieder zeigen",
-  "/qk zuruecksetzen – Position und Einstellungen zurücksetzen",
+  "/qk zuruecksetzen – alles auf Anfang",
+  "/qk diagnose | fehler – technische Infos für Fehlerberichte",
 }
 
 SLASH_QUESTKOMPASS1 = "/qk"
@@ -244,60 +296,43 @@ SLASH_QUESTKOMPASS2 = "/questkompass"
 SlashCmdList.QUESTKOMPASS = function(eingabe)
   local befehl, rest = (eingabe or ""):match("^%s*(%S*)%s*(.-)%s*$")
   befehl = befehl:lower()
-  local db, T = QK.db, QK.Tracker
+  local db = QK.db
   if befehl == "" then
-    T:Umschalten()
+    db.versteckt = not db.versteckt
+    QK:Anwenden()
   elseif befehl == "hilfe" or befehl == "help" or befehl == "?" then
-    QK:Meldung("Version %s, Daten vom %s", QK.version, QK.datenStand or "?")
+    QK:Meldung("Version %s, Questdaten vom %s", QK.version, QK.datenStand or "?")
     for _, zeile in ipairs(HILFE) do DEFAULT_CHAT_FRAME:AddMessage("  " .. zeile) end
+  elseif befehl == "einstellungen" or befehl == "optionen" or befehl == "config" then
+    QK.Assistent:Oeffnen(2, true)
+  elseif befehl == "einrichten" or befehl == "assistent" then
+    QK.Assistent:Oeffnen(1)
   elseif befehl == "gebiet" or befehl == "zone" then
     QK.Gebiet:Zeigen(rest ~= "" and rest or nil)
-  elseif befehl == "alle" or befehl == "verfolgt" then
-    db.modus = befehl
-    QK:Meldung(befehl == "alle" and "zeige alle Quests im Log." or "zeige nur verfolgte Quests.")
-    T:Aktualisieren()
-  elseif befehl == "anzahl" then
-    local n = tonumber(rest)
-    if n and n >= 1 and n <= 25 then
-      db.anzahl = math.floor(n)
-      T:Aktualisieren()
-      QK:Meldung("zeige bis zu %d Quests.", db.anzahl)
-    else
-      QK:Meldung("bitte eine Zahl von 1 bis 25 angeben.")
-    end
-  elseif befehl == "sperren" or befehl == "entsperren" then
-    db.gesperrt = befehl == "sperren"
-    T:Sperre()
-    QK:Meldung(db.gesperrt and "Liste ist fixiert." or "Liste lässt sich mit der Maus verschieben.")
-  elseif befehl == "ruhe" then
-    db.ruhemodus = not db.ruhemodus
-    T:Ruhe(InCombatLockdown())
-    QK:Meldung("Ruhemodus im Kampf ist %s.", db.ruhemodus and "an" or "aus")
-  elseif befehl == "blizzard" then
-    db.blizzardAusblenden = not db.blizzardAusblenden
-    T:BlizzardTracker()
-    QK:Meldung("Blizzard-Questverfolgung ist %s.", db.blizzardAusblenden and "ausgeblendet" or "sichtbar")
-  elseif befehl == "breite" then
-    local n = tonumber(rest)
-    if n and n >= 160 and n <= 400 then db.breite = math.floor(n); T:Aktualisieren()
-    else QK:Meldung("bitte eine Breite von 160 bis 400 angeben.") end
-  elseif befehl == "groesse" or befehl == "größe" then
-    local n = tonumber(rest)
-    if n and n >= 50 and n <= 200 then db.skalierung = n / 100; T:Skalieren()
-    else QK:Meldung("bitte eine Größe von 50 bis 200 (Prozent) angeben.") end
+  elseif befehl == "fokus" then
+    QK.Compat:FokusSetzen(nil)
+    QK:Anwenden()
+    QK:Meldung("Fokus aufgehoben.")
   elseif befehl == "einblenden" then
     wipe(QK.char.ausgeblendet)
-    T:Aktualisieren()
+    QK:Anwenden()
     QK:Meldung("alle Quests sind wieder sichtbar.")
   elseif befehl == "zuruecksetzen" or befehl == "reset" then
-    wipe(QuestkompassDB)
-    fuelle(QuestkompassDB, STANDARD)
-    T:Positionieren()
-    T:Sperre()
-    T:Skalieren()
-    T:BlizzardTracker()
-    T:Aktualisieren()
-    QK:Meldung("Einstellungen zurückgesetzt.")
+    local diag, fehler = db.diagnose, db.fehler
+    wipe(db)
+    QK:Standardwerte(db)
+    db.diagnose, db.fehler, db.eingerichtet = diag, fehler, true
+    QK:Anwenden()
+    QK:Meldung("Einstellungen zurückgesetzt. /qk einrichten startet den Assistenten.")
+  elseif befehl == "diagnose" then
+    QK.Compat:Diagnose(true)
+  elseif befehl == "fehler" then
+    if not db.fehler or #db.fehler == 0 then
+      QK:Meldung("keine Fehler aufgezeichnet.")
+    else
+      QK:Meldung("die letzten %d Fehler:", #db.fehler)
+      for _, f in ipairs(db.fehler) do DEFAULT_CHAT_FRAME:AddMessage("  " .. f) end
+    end
   else
     QK:Meldung("unbekannter Befehl. /qk hilfe zeigt alle Befehle.")
   end

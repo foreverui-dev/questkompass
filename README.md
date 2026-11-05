@@ -4,26 +4,27 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 
 ## Was es kann
 
-- **Zielliste** neben der Minikarte. Quests der aktuellen Zone stehen oben, Ziele mit Zähler bekommen einen schmalen Fortschrittsbalken, fertige Quests zeigen „Bereit zum Abgeben“.
-  Linksklick öffnet die Quest im Questlog, Umschalt+Klick setzt den Link in den Chat, Rechtsklick blendet sie aus.
-- **Ruhemodus:** im Kampf wird die Liste halb durchsichtig.
-- **Gebietsfortschritt** (Kartensymbol oben rechts oder `/qk gebiet`): alle Quests einer Zone, die zu Fraktion, Klasse und Volk deines Charakters passen, mit Status erledigt, im Log oder offen und der Erfahrung, die noch drin ist.
-- **Quest-Tooltips:** Quest-Links im Chat zeigen Gebiet, Typ (Elite, Dungeon, Schlachtzug), Erfahrung und Ruf.
+- **Einrichtungsassistent** beim ersten Start: Stil, Lage, Verhalten und Helfer in vier Schritten, jede Wahl sofort sichtbar. Später derselbe Dialog als Einstellungsfenster.
+- **Zielliste** mit drei Stilen (Ruhig, Klassisch, Kompakt). Sortiert nach Entfernung, Zone oder Questlog, mit Fortschrittsbalken und „Bereit zum Abgeben“.
+- **Kompass:** Pfeil und Entfernung zu jedem Questziel auf der aktuellen Karte. Klick setzt die Quest als Fokus, das Spiel zeigt dann den Weg.
+- **Rechtsklick-Menü:** Fokus, im Questlog öffnen, Link, mit der Gruppe teilen, ausblenden.
+- **Ruhemodus:** im Kampf wird die Liste durchsichtig.
+- **Gebietsfortschritt** (Kartensymbol, Minikarten-Knopf mit Umschalt oder `/qk gebiet`): alle Quests einer Zone für deinen Charakter, erledigt, im Log oder offen.
+- **Kleine Helfer:** Meldung und Klang bei erfüllten Zielen, auf Wunsch automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp mit höchstem Händlerwert.
+- **Quest-Tooltips:** Quest-Links im Chat zeigen Gebiet, Typ, Erfahrung und Ruf.
 
 ## Befehle
 
 | Befehl | Wirkung |
 |---|---|
 | `/qk` | Zielliste ein- oder ausblenden |
-| `/qk gebiet [Name]` | Gebietsfortschritt der aktuellen oder einer genannten Zone |
-| `/qk alle` · `/qk verfolgt` | alle Quests im Log oder nur verfolgte zeigen |
-| `/qk anzahl 1-25` | wie viele Quests die Liste zeigt |
-| `/qk sperren` · `/qk entsperren` | Liste fixieren oder verschiebbar machen |
-| `/qk ruhe` | Ruhemodus im Kampf an/aus |
-| `/qk blizzard` | Blizzard-Questverfolgung zeigen oder ausblenden |
-| `/qk breite 160-400` · `/qk groesse 50-200` | Breite in Pixeln, Größe in Prozent |
+| `/qk einstellungen` | Einstellungsfenster |
+| `/qk einrichten` | Einrichtungsassistent erneut starten |
+| `/qk gebiet [Name]` | Gebietsfortschritt |
+| `/qk fokus` | Fokus aufheben |
 | `/qk einblenden` | ausgeblendete Quests wieder zeigen |
-| `/qk zuruecksetzen` | Position und Einstellungen zurücksetzen |
+| `/qk zuruecksetzen` | alle Einstellungen zurücksetzen |
+| `/qk diagnose` · `/qk fehler` | technische Infos für Fehlerberichte |
 
 ## Entwicklung
 
