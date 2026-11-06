@@ -102,9 +102,9 @@ function P:Drehen()
     if not rahmen.angekommen then rahmen.angekommen = true; QK:Sprechen(L"Am Ziel.") end
   elseif d then
     if d > 20 then rahmen.angekommen = false end
-    local tempo = GetUnitSpeed and GetUnitSpeed("player") or 0
+    local tempo = QK.Zahl(GetUnitSpeed and GetUnitSpeed("player"))
     local text = QK:EntfernungText(d)
-    if tempo > 0 then text = text .. "  ·  " .. QK:DauerText(d / tempo) end
+    if tempo and tempo > 0 then text = text .. "  ·  " .. QK:DauerText(d / tempo) end
     if winkel and (QK.db.farbenblind or QK.db.kontrast) then text = text .. "  ·  " .. Richtungswort(winkel) end
     info:SetText(text)
   elseif rahmen.zone then

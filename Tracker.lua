@@ -197,7 +197,7 @@ local function ZeileTooltip(self)
   local d = QK.Kompass:Entfernung(q.id)
   if d then
     GameTooltip:AddDoubleLine(L"Entfernung", QK:EntfernungText(d), 0.6, 0.6, 0.6, 0.85, 0.85, 0.85)
-    local tempo = GetUnitSpeed and GetUnitSpeed("player")
+    local tempo = QK.Zahl(GetUnitSpeed and GetUnitSpeed("player"))
     if tempo and tempo > 0 then
       GameTooltip:AddDoubleLine(L"Ankunft in etwa", QK:DauerText(d / tempo), 0.6, 0.6, 0.6, 0.85, 0.85, 0.85)
     end
@@ -417,7 +417,7 @@ local function EPVorschau(quests, y)
     if ist + summe >= max then teile[#teile + 1] = QK.gold .. L"Stufenaufstieg!" .. "|r" end
   end
   if gold > 0 then teile[#teile + 1] = QK:GeldText(gold) end
-  local erholt = db.erholung and mitEP and GetXPExhaustion and GetXPExhaustion() or nil
+  local erholt = db.erholung and mitEP and GetXPExhaustion and QK.Zahl(GetXPExhaustion()) or nil
   if erholt and erholt > 0 and summe > 0 then
     teile[#teile + 1] = "|cff6fb6ff" .. (L"%s erholt"):format(QK:EPText(erholt)) .. "|r"
   end

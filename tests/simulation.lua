@@ -571,6 +571,15 @@ local function Durchlauf(modern)
     alleTexte = {}
     QK.Pfeil:Aktualisieren()
     pruefe(QuestkompassPfeil.gezeigt and enthaelt("Brunnen"), "Fokuspfeil führt zum Wegpunkt")
+    -- geschützte Werte (Tempo, Blickrichtung): dürfen nicht verglichen werden
+    local echterVergleich = issecretvalue
+    issecretvalue = function(v) return v == 7 end
+    local fehlerVorher = #(QK.root.fehler or {})
+    QK.Pfeil:Aktualisieren()
+    QK.Tracker:Aktualisieren()
+    pruefe(QK.Zahl(7) == nil and QK.Zahl(3) == 3 and QK.Zahl("x") == nil, "QK.Zahl erkennt geschützte Werte")
+    pruefe(#(QK.root.fehler or {}) == fehlerVorher and QuestkompassPfeil.gezeigt, "Pfeil und Liste laufen mit geschütztem Tempo")
+    issecretvalue = echterVergleich
     QK.Navigation:Minikarte()
     pruefe(QuestkompassRandpfeil.gezeigt, "Pfeil am Minikartenrand")
     QK.char.wegpunkt.x, QK.char.wegpunkt.y = 0.5, 0.5005
@@ -583,10 +592,12 @@ local function Durchlauf(modern)
     pruefe(enthaelt("ABGABE IN DER NÄHE"), "Abgabe-Erinnerung")
   end
   -- Belohnungs-Vergleich
-  GetItemInfo = function(link)
+  local function iteminfo(link)
     local i = tonumber(link:match("%d+"))
     return "x", link, 2, i == 9 and 10 or 20, 1, "x", "x", 1, "INVTYPE_HEAD", 1, i == 2 and 500 or 100
   end
+  -- moderner Client: GetItemInfo gibt es nur unter C_Item
+  if modern then GetItemInfo, C_Item = nil, { GetItemInfo = iteminfo } else GetItemInfo = iteminfo end
   GetInventoryItemLink = function(_, platz) if platz == 1 then return "item:9" end end
   alleTexte = {}
   feuern("QUEST_COMPLETE")

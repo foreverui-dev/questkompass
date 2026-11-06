@@ -76,7 +76,7 @@ local function Markieren(versuch)
   for i = 1, n do
     local link = GetQuestItemLink("choice", i)
     if not link then return false end
-    local p = select(11, GetItemInfo(link))
+    local p = select(11, QK.Compat.ItemInfo(link))
     if p == nil then return false end
     local _, _, _, anzahl = GetQuestItemInfo("choice", i)
     p = p * (anzahl or 1)
@@ -123,17 +123,17 @@ local vergleichsMarken = {}
 
 local function Stufe(link)
   if not link then return nil end
-  if GetDetailedItemLevelInfo then
-    local ok, s = pcall(GetDetailedItemLevelInfo, link)
+  if QK.Compat.ItemStufe then
+    local ok, s = pcall(QK.Compat.ItemStufe, link)
     if ok and s then return s end
   end
-  local _, _, _, s = GetItemInfo(link)
+  local _, _, _, s = QK.Compat.ItemInfo(link)
   return s
 end
 
 -- Unterschied zur schwächsten passenden angelegten Ausrüstung, nil wenn nicht vergleichbar
 function A:Vergleich(link)
-  local _, _, _, stufe, _, _, _, _, platz = GetItemInfo(link)
+  local _, _, _, stufe, _, _, _, _, platz = QK.Compat.ItemInfo(link)
   stufe = Stufe(link) or stufe
   local plaetze = platz and PLAETZE[platz]
   if not stufe or not plaetze then return nil end

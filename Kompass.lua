@@ -59,13 +59,14 @@ function K:RichtungZuPunkt(x, y)
   local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(karte, "player")
   if not pos then return nil end
   local px, py = pos:GetXY()
-  if not px or (px == 0 and py == 0) then return nil end
+  px, py = QK.Zahl(px), QK.Zahl(py)
+  if not px or not py or (px == 0 and py == 0) then return nil end
   local g = Groesse(karte)
   local b, h = g and g[1] or 1000, g and g[2] or 667
   local dx, dy = (x - px) * b, (y - py) * h
   local entfernung = g and math.sqrt(dx * dx + dy * dy) or nil
   local peilung = atan2(dx, -dy)               -- im Uhrzeigersinn ab Norden
-  local blick = GetPlayerFacing and GetPlayerFacing()
+  local blick = GetPlayerFacing and QK.Zahl(GetPlayerFacing())
   if not blick then return nil, entfernung, peilung end
   return peilung + blick, entfernung, peilung  -- GetPlayerFacing zählt gegen den Uhrzeigersinn
 end
@@ -100,7 +101,11 @@ end
 function K:Spieler()
   if not karte then return nil end
   local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(karte, "player")
-  if pos then return pos:GetXY() end
+  if pos then
+    local x, y = pos:GetXY()
+    x, y = QK.Zahl(x), QK.Zahl(y)
+    if x and y then return x, y end
+  end
 end
 
 function K:Entfernung(questID)

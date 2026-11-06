@@ -10,6 +10,16 @@ C.modern = CQ.GetInfo ~= nil and CQ.GetNumQuestLogEntries ~= nil
 
 local function zahl(v) return tonumber(v) end
 
+-- Gegenstands-API: neuere Clients haben GetItemInfo usw. nur noch unter C_Item.
+function C.ItemInfo(link)
+  local f = GetItemInfo or (C_Item and C_Item.GetItemInfo)
+  if f and link then return f(link) end
+end
+function C.ItemStufe(link)
+  local f = GetDetailedItemLevelInfo or (C_Item and C_Item.GetDetailedItemLevelInfo)
+  if f and link then return f(link) end
+end
+
 -- Zieltext ohne Zähler: "Bergpumapelz: 1/10" oder "1/10 Bergpumapelz" -> "Bergpumapelz"
 local function zielName(text)
   if not text then return "" end
@@ -271,7 +281,8 @@ end
 function C:Entfernung(questID)
   if CQ.GetDistanceSqToQuest then
     local ok, d2, gleicherKontinent = pcall(CQ.GetDistanceSqToQuest, questID)
-    if ok and d2 and d2 > 0 and gleicherKontinent ~= false then return math.sqrt(d2) end
+    d2 = ok and QK.Zahl(d2)
+    if d2 and d2 > 0 and gleicherKontinent ~= false then return math.sqrt(d2) end
   end
   return nil
 end

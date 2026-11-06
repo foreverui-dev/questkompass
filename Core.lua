@@ -247,6 +247,17 @@ end
 -- Fehlerprotokoll: Fehler im Addon sollen nie die Oberfläche lahmlegen.
 ---------------------------------------------------------------------------
 local gemeldet = false
+-- Geschützte Werte: Neuere Clients geben manche Zahlen (Tempo, Position, Blickrichtung) als
+-- „geheime“ Werte zurück, mit denen Addons nicht rechnen oder vergleichen dürfen.
+-- QK.Zahl liefert die Zahl, wenn sie benutzbar ist, sonst nil.
+local function vergleichbar(v) return v < math.huge end
+function QK.Zahl(v)
+  if type(v) ~= "number" then return nil end
+  if issecretvalue and issecretvalue(v) then return nil end
+  if not pcall(vergleichbar, v) then return nil end
+  return v
+end
+
 function QK:Sicher(name, fn, ...)
   local ok, fehler = pcall(fn, ...)
   if not ok then
