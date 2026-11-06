@@ -1,5 +1,32 @@
 # Questkompass
 
+## 0.6.0
+
+20 neue Funktionen:
+
+1. Quests oben anheften (Rechtsklick), angeheftete Quests stehen gleich nach dem Fokus
+2. Fokusmodus: die Liste zeigt nur die Fokus-Quest (`/qk fokusmodus`, Tastenkürzel)
+3. Symbole an den Zielen: Totenkopf für Gegner, Beutel für Gegenstände, Zahnrad für Objekte
+4. Fertige Quests kompakt: nur der Titel mit Haken
+5. Fortschritt je Quest in Prozent
+6. Erholungsbonus in der Erfahrungszeile
+7. Wegpunkt-Kette: mehrere Wegpunkte nacheinander (`/qk kette X Y`, Umschalt+Alt+Klick auf die Weltkarte)
+8. Route mit Station und Restweg unter dem Fokuspfeil
+9. Liegt das Ziel auf einer anderen Karte, nennt der Pfeil die Zone
+10. „Was jetzt?“: Knopf in der Kopfzeile, Tastenkürzel und `/qk wasjetzt` wählen das sinnvollste nächste Ziel und lesen es vor
+11. Questziele im Tooltip von Gegnern, z. B. „Die Jagd geht weiter: Bergpumapelz 3/10“
+12. Questziele im Tooltip von Gegenständen
+13. Neuer Reiter „Statistik“: Quests pro Tag der letzten 14 Tage, Summen und Lieblingsgebiet
+14. Rekorde: bester Tag, schnellste und längste Quest, meiste EP
+15. Dauer und Gold je Quest im Tagebuch
+16. Filter im Gebiet-Reiter: alle, offen, im Log, erledigt
+17. Merkliste: offene Quests im Questbuch per Rechtsklick merken, sie erscheinen im Planer
+18. Tagesziel mit Anzeige in der Kopfzeile und Meldung beim Erreichen (`/qk tagesziel 10`)
+19. Neue Quests in der Gruppe automatisch teilen; Warnung 60 und 10 Sekunden vor Ablauf eines Zeitlimits
+20. Einstellungen teilen: als Text kopieren und bei Freunden oder Twinks einfügen (`/qk export`, `/qk import`)
+
+Außerdem: neue Assistent-Seite „Feinschliff“ für alle neuen Schalter, alle neuen Texte auch auf Englisch.
+
 ## 0.5.0
 
 20 neue Funktionen:

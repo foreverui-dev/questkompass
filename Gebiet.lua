@@ -21,6 +21,10 @@ local gebietTitel, gebietUnter, gebietBalken, gebietBalkenText
 local weltTitel, weltBalken, weltBalkenText
 local buchStatistik
 local auswahl = 0           -- Gamepad/Tastatur: markierte Zeile
+local filter = 1            -- Gebiet: 1 alle, 2 offen, 3 im Log, 4 erledigt
+local FILTER = { "Alle", "Offen", "Im Log", "Erledigt" }
+local filterKnopf
+local MERK = "|TInterface\\COMMON\\ReputationStar:12:12:0:0:32:32:0:16:0:16|t"
 
 -- Reiter; weitere Dateien hängen mit G:ReiterHinzufuegen eigene an (Planer, Erfolge).
 local REITER = { { "gebiet", L"Gebiet" }, { "welt", L"Welt" }, { "suche", L"Suche" }, { "tagebuch", L"Tagebuch" } }
@@ -155,10 +159,22 @@ local function NeueZeile()
     GameTooltip:AddLine(q.name or (L"Quest " .. q.id), unpack(QK.farben.gold))
     GameTooltip:AddLine(({ L"Steht in deinem Questlog", L"Noch nicht gemacht", L"Erledigt" })[q.status] or "", 0.8, 0.8, 0.8)
     QK.Tooltip:Ergaenzen(GameTooltip, q.id, true)
+    if q.status == 2 and QK.Extras then
+      GameTooltip:AddLine(QK.Extras:Gemerkt(q.id) and L"Rechtsklick: von der Merkliste nehmen" or L"Rechtsklick: auf die Merkliste", 0.6, 0.6, 0.6)
+    end
     GameTooltip:Show()
   end)
   z:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  z:SetScript("OnClick", function(self) if self.klick then self.klick() end end)
+  z:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  z:SetScript("OnClick", function(self, taste)
+    if taste == "RightButton" and self.quest and self.quest.status == 2 and QK.Extras then
+      local an = QK.Extras:Merken(self.quest.id)
+      QK:Meldung(an and L"„%s“ steht auf deiner Merkliste (Planer)." or L"„%s“ von der Merkliste genommen.", self.quest.name or self.quest.id)
+      G:Aktualisieren()
+    elseif self.klick then
+      self.klick()
+    end
+  end)
   return z
 end
 
@@ -231,6 +247,8 @@ end
 
 function G:Fenster() return fenster end
 
+function G:Filter(n) filter = n; auswahl = 0; G:Aktualisieren() end
+
 local function QuestEintrag(q, mitGebiet)
   local typ = QK:TypName(q.typ)
   local text = (q.name or (L"Quest " .. q.id)) .. (typ and (" |cffd98c40(" .. typ .. ")|r") or "")
@@ -243,6 +261,7 @@ local function QuestEintrag(q, mitGebiet)
   if QK.db.farbenblind or QK.db.kontrast then
     e.text = e.text .. "  |cffbfbfbf(" .. ({ L"im Log", L"offen", L"erledigt" })[q.status] .. ")|r"
   end
+  if q.status == 2 and QK.Extras and QK.Extras:Gemerkt(q.id) then e.text = MERK .. " " .. e.text end
   if q.status == 2 and QK.Twinks then
     local andere = QK.Twinks:Andere(q.id)
     if #andere > 0 then e.text = e.text .. " |cff7fbfff(" .. L"Twink" .. ")|r" end
@@ -267,11 +286,14 @@ function AUFBAU.gebiet()
   end
   local liste = G:Liste(gebietID)
   local anzahl, epOffen, eintraege = { 0, 0, 0 }, 0, {}
+  local passend = { nil, 2, 1, 3 }
   for _, q in ipairs(liste) do
     anzahl[q.status] = anzahl[q.status] + 1
     if q.status ~= 3 then epOffen = epOffen + (q.ep or 0) end
-    eintraege[#eintraege + 1] = QuestEintrag(q)
+    if filter == 1 or q.status == passend[filter] then eintraege[#eintraege + 1] = QuestEintrag(q) end
   end
+  if #eintraege == 0 and #liste > 0 then eintraege[1] = { text = L"Nichts in diesem Filter.", farbe = QK.farben.grau } end
+  filterKnopf:SetText(L(FILTER[filter]))
   Zeichnen(eintraege)
   gebietTitel:SetText(QK:GebietName(gebietID))
   gebietUnter:SetText((L"%d im Log · %d offen%s"):format(anzahl[1], anzahl[2],
@@ -322,10 +344,12 @@ function AUFBAU.tagebuch()
   for i = #buch, 1, -1 do
     local e = buch[i]
     local tag = date("%d.%m.", e.zeit)
+    local rechts = QK:EPText(e.ep) or ""
+    if e.dauer then rechts = rechts .. (rechts ~= "" and " · " or "") .. QK:DauerText(e.dauer) end
     eintraege[#eintraege + 1] = {
       symbol = HAKEN,
       text = (tag == heute and date("%H:%M", e.zeit) or tag) .. "  " .. (e.name or (L"Quest " .. e.id)),
-      rechts = QK:EPText(e.ep) or "",
+      rechts = rechts,
       quest = QK:Quest(e.id) and (function() local q = QK:Quest(e.id); q.status = 3; return q end)() or nil,
     }
   end
@@ -407,7 +431,7 @@ end
 
 local function Erstellen()
   fenster = CreateFrame("Frame", "QuestkompassGebiet", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-  fenster:SetSize(460, 520)
+  fenster:SetSize(490, 520)
   fenster:SetFrameStrata("DIALOG")
   fenster:SetClampedToScreen(true)
   fenster:SetMovable(true)
@@ -454,7 +478,7 @@ local function Erstellen()
       if r[1] == "suche" and suchFeld then suchFeld:SetFocus() end
     end)
     reiterKnoepfe[r[1]] = b
-    x = x + (b.text:GetStringWidth() or 50) + 18
+    x = x + (b.text:GetStringWidth() or 50) + 14
   end
   for _, r in ipairs(REITER) do
     if KOPFBAU[r[1]] then KOPFBAU[r[1]](G.KopfBereich(r[1])) end
@@ -489,7 +513,14 @@ local function Erstellen()
   weiter:SetPoint("LEFT", hier, "RIGHT", 2, 0)
   gebietUnter = kg:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
   gebietUnter:SetPoint("TOPLEFT", gebietTitel, "BOTTOMLEFT", 0, -4)
-  gebietUnter:SetPoint("RIGHT", 0, 0)
+  gebietUnter:SetPoint("RIGHT", -84, 0)
+  filterKnopf = Knopf(kg, L"Alle", 80, function()
+    filter = (filter % #FILTER) + 1
+    auswahl = 0
+    G:Aktualisieren()
+  end)
+  filterKnopf:SetPoint("TOPRIGHT", 0, -22)
+  filterKnopf:SetHeight(18)
   gebietUnter:SetJustifyH("LEFT")
   gebietBalken, gebietBalkenText = Balken(kg, -46)
 
@@ -535,7 +566,7 @@ local function Erstellen()
   scroll:SetPoint("TOPLEFT", 10, -132)
   scroll:SetPoint("BOTTOMRIGHT", -30, 30)
   inhalt = CreateFrame("Frame", nil, scroll)
-  inhalt:SetSize(410, 1)
+  inhalt:SetSize(440, 1)
   scroll:SetScrollChild(inhalt)
   scroll:SetScript("OnSizeChanged", function(_, w) inhalt:SetWidth(w) end)
 
@@ -604,16 +635,21 @@ function G:Start()
   QK:Ereignis("ZONE_CHANGED_NEW_AREA", planen)
   QK:Ereignis("QUEST_LOG_UPDATE", planen)
   QK:Ereignis("PLAYER_XP_UPDATE", EPMessen)
-  QK:Ereignis("QUEST_TURNED_IN", function(questID, ep)
+  QK:Ereignis("QUEST_TURNED_IN", function(questID, ep, geld)
     if not questID then return end
     sitzung.quests = sitzung.quests + 1
     local daten = QK:Quest(questID)
     local buch = QK.char.tagebuch
+    local seit = QK.char.angenommen and QK.char.angenommen[questID]
+    local jetzt = time()
     buch[#buch + 1] = {
       id = questID,
       name = (QK.Compat.titel and QK.Compat.titel[questID]) or (daten and daten.name),
-      zeit = time(),
+      zeit = jetzt,
       ep = (ep and ep > 0) and ep or (daten and daten.ep) or 0,
+      gold = (geld and geld > 0) and geld or nil,
+      gebiet = daten and daten.gebiet or nil,
+      dauer = (seit and not QK.char.geschaetzt[questID] and jetzt - seit > 0) and (jetzt - seit) or nil,
     }
     while #buch > 500 do table.remove(buch, 1) end
     weltCache = nil

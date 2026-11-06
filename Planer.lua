@@ -234,6 +234,19 @@ local function Aufbau()
   KopfFuellen()
   local eintraege = {}
 
+  -- Merkliste aus dem Questbuch (Rechtsklick auf offene Quests)
+  local gemerkt = {}
+  for id in pairs(QK.char.merkliste) do
+    local q = QK:Quest(id)
+    if q and not QK.Compat:IstErledigt(id) then q.status = 2; gemerkt[#gemerkt + 1] = q
+    elseif not q or QK.Compat:IstErledigt(id) then QK.char.merkliste[id] = nil end
+  end
+  if #gemerkt > 0 then
+    table.sort(gemerkt, function(a, b) return (a.name or "") < (b.name or "") end)
+    Ueberschrift(eintraege, L"Deine Merkliste")
+    for _, q in ipairs(gemerkt) do eintraege[#eintraege + 1] = QK.Gebiet.QuestEintrag(q, true) end
+  end
+
   Ueberschrift(eintraege, L"Vorschläge in deiner Gegend")
   local vorschlaege = PL:Vorschlaege(12)
   for _, q in ipairs(vorschlaege) do eintraege[#eintraege + 1] = QK.Gebiet.QuestEintrag(q, true) end
@@ -301,11 +314,11 @@ function PL:Start()
     local id = (b and b > 0 and b) or a
     if id then QK.char.angenommen[id] = time() end
   end)
-  QK:Ereignis("QUEST_TURNED_IN", function(id) if id then QK.char.angenommen[id] = nil end end)
+  QK:Ereignis("QUEST_TURNED_IN", function(id) if id then QK.char.angenommen[id] = nil; QK.char.geschaetzt[id] = nil end end)
   -- Quests, die schon vor 0.5 im Log standen, zählen ab heute
   local jetzt = time()
   for _, q in ipairs(QK.Compat:Questlog()) do
-    if not QK.char.angenommen[q.id] then QK.char.angenommen[q.id] = jetzt end
+    if not QK.char.angenommen[q.id] then QK.char.angenommen[q.id] = jetzt; QK.char.geschaetzt[q.id] = true end
   end
 end
 

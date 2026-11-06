@@ -11,6 +11,12 @@
   <Binding name="QUESTKOMPASS_ZURUECK" category="ADDONS">
     Questkompass:Taste("zurueck")
   </Binding>
+  <Binding name="QUESTKOMPASS_WASJETZT" category="ADDONS">
+    Questkompass:Taste("wasjetzt")
+  </Binding>
+  <Binding name="QUESTKOMPASS_FOKUSMODUS" category="ADDONS">
+    Questkompass:Taste("fokusmodus")
+  </Binding>
   <Binding name="QUESTKOMPASS_ROUTE" category="ADDONS">
     Questkompass:Taste("route")
   </Binding>

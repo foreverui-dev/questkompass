@@ -2,7 +2,7 @@
 local _, QK = ...
 local P = QK:Modul("Pfeil")
 local L = QK.L
-local rahmen, pfeil, titel, info
+local rahmen, pfeil, titel, info, unten
 
 local function Farbe(winkel)
   local a = math.abs(((winkel + math.pi) % (2 * math.pi)) - math.pi) / math.pi
@@ -63,6 +63,8 @@ local function Erstellen()
   titel:SetWordWrap(false)
   info = rahmen:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   info:SetPoint("TOP", titel, "BOTTOM", 0, -2)
+  unten = rahmen:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+  unten:SetPoint("TOP", info, "BOTTOM", 0, -2)
 
   local takt = 0
   rahmen:SetScript("OnUpdate", function(_, el)
@@ -105,8 +107,23 @@ function P:Drehen()
     if tempo > 0 then text = text .. "  ·  " .. QK:DauerText(d / tempo) end
     if winkel and (QK.db.farbenblind or QK.db.kontrast) then text = text .. "  ·  " .. Richtungswort(winkel) end
     info:SetText(text)
+  elseif rahmen.zone then
+    info:SetText("|cff8c8c8c" .. (L"Ziel in %s"):format(rahmen.zone) .. "|r")
   else
     info:SetText(L"|cff8c8c8cZiel nicht auf dieser Karte|r")
+  end
+  -- Route: Station und Restweg
+  local station = id and QK.Navigation and QK.Navigation:Station(id)
+  if station then
+    local rest, offen, gesamt = QK.Navigation:Restweg()
+    local nr = gesamt - offen + 1
+    local text = (L"Station %d von %d"):format(nr, gesamt)
+    if rest and rest > 0 then text = text .. " · " .. (L"Route noch %s"):format(QK:EntfernungText(rest)) end
+    unten:SetText(text)
+  elseif wp and QK.char.wegkette and #QK.char.wegkette > 0 then
+    unten:SetText((L"danach noch %d Wegpunkte"):format(#QK.char.wegkette))
+  else
+    unten:SetText("")
   end
 end
 
@@ -129,6 +146,7 @@ function P:Aktualisieren()
   end
   if not q then rahmen.questID = nil; rahmen:Hide() return end
   rahmen.questID = id
+  rahmen.zone = q.zone
   titel:SetText(q.titel)
   titel:SetTextColor(unpack(QK.farben.gold))
   rahmen:Show()

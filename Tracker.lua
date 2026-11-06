@@ -307,9 +307,37 @@ local function Marken(q)
   if q.mitspieler and #q.mitspieler > 0 then m[#m + 1] = "|cff7fbfff[" .. #q.mitspieler .. "]|r" end
   if q.neu then m[#m + 1] = QK.gold .. "Neu|r" end
   if q.route then m[#m + 1] = QK.gold .. "#" .. q.route .. "|r" end
+  if q.angeheftet then m[#m + 1] = "|TInterface\\COMMON\\Indicator-Yellow:12:12:0:0|t" end
+  if QK.db.fertigKompakt and q.fertig then m[#m + 1] = HAKEN end
+  if QK.db.prozent and not q.fertig then
+    local p = T:Prozent(q)
+    if p then m[#m + 1] = "|cffbfbfbf" .. p .. " %|r" end
+  end
   for _, extra in ipairs(QK:Rufe("marke", q)) do m[#m + 1] = extra end
   return #m > 0 and (" " .. table.concat(m, " ")) or ""
 end
+
+-- Gesamtfortschritt einer Quest in Prozent (aus allen Zielen)
+function T:Prozent(q)
+  local ist, soll = 0, 0
+  for _, z in ipairs(q.ziele) do
+    local s = (z.soll and z.soll > 0) and z.soll or 1
+    local i = z.fertig and s or math.min(z.ist or 0, s)
+    ist, soll = ist + i, soll + s
+  end
+  if soll == 0 then return nil end
+  return math.floor(ist / soll * 100 + 0.5)
+end
+
+-- Symbol je Zielart: Gegner, Gegenstand, Objekt, Ereignis, Ruf
+local SYMBOLE = {
+  monster = "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:12:12:0:0|t ",
+  item = "|TInterface\\Icons\\INV_Misc_Bag_10:12:12:0:0:64:64:6:58:6:58|t ",
+  object = "|TInterface\\Icons\\INV_Misc_Gear_01:12:12:0:0:64:64:6:58:6:58|t ",
+  event = "|TInterface\\Icons\\Ability_Tracking:12:12:0:0:64:64:6:58:6:58|t ",
+  reputation = "|TInterface\\Icons\\INV_Misc_Note_02:12:12:0:0:64:64:6:58:6:58|t ",
+}
+T.SYMBOLE = SYMBOLE
 
 local function Sortieren(quests, hier)
   local fokus = QK.Compat:Fokus()
@@ -323,9 +351,11 @@ local function Sortieren(quests, hier)
     q.neu = QK.db.neuMarkierung and neu[q.id] and jetzt - neu[q.id] < NEU_DAUER or false
     q.mitspieler = QK.db.mitspieler and QK.Compat:Mitspieler(q) or nil
     q.route = QK.Navigation and QK.Navigation:Station(q.id) or nil
+    q.angeheftet = QK.char.angeheftet[q.id] and true or false
   end
   table.sort(quests, function(a, b)
     if (a.id == fokus) ~= (b.id == fokus) then return a.id == fokus end
+    if a.angeheftet ~= b.angeheftet then return a.angeheftet end
     if (a.route ~= nil) ~= (b.route ~= nil) then return a.route ~= nil end
     if a.route and b.route then return a.route < b.route end
     if art ~= "log" then
@@ -387,6 +417,10 @@ local function EPVorschau(quests, y)
     if ist + summe >= max then teile[#teile + 1] = QK.gold .. L"Stufenaufstieg!" .. "|r" end
   end
   if gold > 0 then teile[#teile + 1] = QK:GeldText(gold) end
+  local erholt = db.erholung and mitEP and GetXPExhaustion and GetXPExhaustion() or nil
+  if erholt and erholt > 0 and summe > 0 then
+    teile[#teile + 1] = "|cff6fb6ff" .. (L"%s erholt"):format(QK:EPText(erholt)) .. "|r"
+  end
   local z, h = Zeile("ep", table.concat(teile, " · "), QK.farben.hell, nil, y)
   local werte = {}
   if summe > 0 then werte[#werte + 1] = QK:EPText(summe) end
@@ -458,11 +492,11 @@ function T:Aktualisieren()
       if #passend > 0 then quests = passend; modusText = L"Dungeon" end
     end
   end
-  -- Im Kampf nur die Fokus-Quest
+  -- Im Kampf (oder im Fokusmodus) nur die Fokus-Quest
   local fokusJetzt = QK.Compat:Fokus()
-  if db.kampfNurFokus and imKampf and fokusJetzt then
+  if fokusJetzt and ((db.kampfNurFokus and imKampf) or db.fokusModus) then
     for _, q in ipairs(quests) do
-      if q.id == fokusJetzt then quests = { q }; modusText = L"Kampf" break end
+      if q.id == fokusJetzt then quests = { q }; modusText = db.fokusModus and L"Fokus" or L"Kampf" break end
     end
   end
   Sortieren(quests, hier)
@@ -481,6 +515,13 @@ function T:Aktualisieren()
   -- Zähler und Warnung bei vollem Questlog
   local max = QK.Compat:MaxQuests()
   zaehler:SetText((modusText and (modusText .. " · ") or "") .. ("%d/%d"):format(#alle, max))
+  local ziel = db.tagesziel or 0
+  if ziel > 0 and QK.Extras then
+    local heute = QK.Extras:Heute()
+    kopfTitel:SetText(L"QUESTKOMPASS" .. "  |cffbfbfbf" .. (L"heute %d/%d"):format(heute, ziel) .. "|r")
+  else
+    kopfTitel:SetText(L"QUESTKOMPASS")
+  end
   local knapp = #alle >= max - 2
   if #alle >= max then zaehler:SetTextColor(unpack(QK.farben.rot))
   elseif knapp then zaehler:SetTextColor(1, 0.6, 0.2)
@@ -551,7 +592,9 @@ function T:Aktualisieren()
           if q.gescheitert then
             local _, hz = Zeile("ziel", L"Gescheitert", QK.farben.rot, q, y); y = y - hz
           elseif q.fertig then
-            local _, hz = Zeile("ziel", HAKEN .. L"Bereit zum Abgeben", QK.farben.gruen, q, y); y = y - hz
+            if not db.fertigKompakt then
+              local _, hz = Zeile("ziel", HAKEN .. L"Bereit zum Abgeben", QK.farben.gruen, q, y); y = y - hz
+            end
           else
             local zahl = 0
             for _, ziel in ipairs(q.ziele) do
@@ -562,6 +605,7 @@ function T:Aktualisieren()
                 elseif ziel.ist and ziel.soll and ziel.soll > 0 then
                   text = ("%s  |cffbfbfbf%d/%d|r"):format(ziel.text, ziel.ist, ziel.soll)
                 end
+                if db.zielSymbole and not ziel.fertig and SYMBOLE[ziel.art] then text = SYMBOLE[ziel.art] .. text end
                 local zz, hz = Zeile("ziel", text, farbe, q, y)
                 if stil.balken and not ziel.fertig and ziel.ist and ziel.soll and ziel.soll > 1 then
                   hz = hz + Balken(zz, ziel.ist, ziel.soll)
@@ -808,7 +852,7 @@ function T:Start()
 
   kopf = CreateFrame("Button", nil, rahmen)
   kopf:SetPoint("TOPLEFT", 0, 0)
-  kopf:SetPoint("TOPRIGHT", -44, 0)
+  kopf:SetPoint("TOPRIGHT", -64, 0)
   kopf:SetHeight(20)
   kopf:RegisterForDrag("LeftButton")
   kopf:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -852,6 +896,9 @@ function T:Start()
   local karte = KopfKnopf("Interface\\Icons\\INV_Misc_Map_01", { L"Questbuch", L"Gebiet, Welt, Suche und Tagebuch" },
     function() QK.Gebiet:Umschalten() end)
   karte:SetPoint("RIGHT", zahnrad, "LEFT", -4, 0)
+  local wasJetzt = KopfKnopf("Interface\\Icons\\INV_Misc_QuestionMark", { L"Was jetzt?", L"Setzt das sinnvollste nächste Ziel als Fokus." },
+    function() QK.Navigation:WasJetzt() end)
+  wasJetzt:SetPoint("RIGHT", karte, "LEFT", -4, 0)
 
   local takt, sortTakt = 0, 0
   rahmen:SetScript("OnUpdate", function(_, el)

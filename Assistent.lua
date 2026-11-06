@@ -318,6 +318,45 @@ local function SeitenBauen()
     }, 0, 46)
   end)
 
+  NeueSeite(L"Feinschliff", function(s, merke)
+    Raster(s, merke, {
+      { L"Symbole an Zielen", L"Totenkopf, Beutel und Zahnrad zeigen die Art.", "zielSymbole" },
+      { L"Fertige Quests kompakt", L"Nur der Titel mit Haken.", "fertigKompakt" },
+      { L"Fortschritt in Prozent", L"Gesamtstand jeder Quest neben dem Titel.", "prozent" },
+      { L"Erholungsbonus zeigen", L"Erholte EP in der Erfahrungszeile.", "erholung" },
+      { L"Ziele in Tooltips", L"Gegner und Gegenstände zeigen deine Questziele.", "tooltipZiele" },
+      { L"Automatisch teilen", L"Neue Quests in der Gruppe teilen.", "autoTeilen" },
+      { L"Zeitlimit-Warnung", L"Hinweis 60 und 10 Sekunden vor Ablauf.", "zeitWarnung" },
+      { L"Fokusmodus", L"Liste zeigt nur die Fokus-Quest.", "fokusModus" },
+    }, 0, 46)
+    local t = Text(s, "GameFontNormal", L"Tagesziel", 120)
+    t:SetPoint("TOPLEFT", 0, -200)
+    local wert = Text(s, "GameFontHighlight", "", 90)
+    wert:SetJustifyH("CENTER")
+    wert:SetPoint("TOPLEFT", 120, -200)
+    local function schritt(d)
+      QK.db.tagesziel = math.max(0, math.min(200, (QK.db.tagesziel or 0) + d))
+      QK:Anwenden(); A:Auffrischen()
+    end
+    local minus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    minus:SetSize(26, 20); minus:SetText("–"); minus:SetPoint("TOPLEFT", 90, -196)
+    minus:SetScript("OnClick", function() schritt(-5) end)
+    local plus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    plus:SetSize(26, 20); plus:SetText("+"); plus:SetPoint("TOPLEFT", 215, -196)
+    plus:SetScript("OnClick", function() schritt(5) end)
+    merke({ Auffrischen = function()
+      local n = QK.db.tagesziel or 0
+      wert:SetText(n > 0 and (L"%d Quests"):format(n) or L"aus")
+    end })
+    local teilen = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    teilen:SetSize(200, 22)
+    teilen:SetText(L"Einstellungen teilen")
+    teilen:SetPoint("TOPLEFT", 255, -196)
+    teilen:SetScript("OnClick", function() QK.Extras:TeilenZeigen(true) end)
+    local tipp = Text(s, "GameFontDisableSmall", L"Mit „Einstellungen teilen“ gibst du deine Einstellungen als Text weiter, z. B. an Freunde oder deinen Twink.", 500)
+    tipp:SetPoint("TOPLEFT", 0, -236)
+  end)
+
   NeueSeite(L"Profil und Tasten", function(s, merke)
     local profile = {
       { "konto", L"Für alle Charaktere", L"Eine Einstellung für deinen ganzen Account." },

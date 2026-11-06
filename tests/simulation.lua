@@ -241,7 +241,7 @@ local function Durchlauf(modern)
   pruefe(QK.Compat.modern == modern, "richtige Quest-API erkannt")
   pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent öffnet beim ersten Start")
   pruefe(enthaelt("Willkommen") and enthaelt("Los geht’s"), "Willkommensseite")
-  for i = 1, 10 do
+  for i = 1, 11 do
     alleTexte = {}
     QK.Assistent:Oeffnen(i)
   end
@@ -591,6 +591,94 @@ local function Durchlauf(modern)
   alleTexte = {}
   feuern("QUEST_COMPLETE")
   pruefe(enthaelt("besser +10"), "Belohnungs-Vergleich")
+  -- 0.6
+  local X = QK.Extras
+  if modern then
+    log[2].ziele[1][3], log[3].ziele[1][3] = false, false
+    C_QuestLog.IsComplete = function(i) return i == 790 end
+  end
+  QK.Compat:FokusSetzen(nil)
+  local hinten = modern and 776 or 12
+  X:Anheften(hinten)
+  local function reihen()
+    local r = {}
+    for _, t in ipairs(alleTexte) do if type(t) == "string" and t:match("^%[%d") then r[#r + 1] = t end end
+    return r
+  end
+  texte(function() QK.Tracker:Aktualisieren() end)
+  pruefe(reihen()[1]:find(modern and "Riten" or "Volkswehr", 1, true) and enthaelt("Indicator-Yellow"), "angeheftete Quest steht oben")
+  X:Anheften(hinten)
+  QK.Compat:FokusSetzen(modern and 750 or 176)
+  X:Fokusmodus()
+  texte(function() QK.Tracker:Aktualisieren() end)
+  pruefe(#reihen() == 1 and enthaelt("Fokus · "), "Fokusmodus zeigt nur die Fokus-Quest")
+  X:Fokusmodus()
+  QK.Compat:FokusSetzen(nil)
+  QK.db.prozent, QK.db.fertigKompakt, QK.db.tagesziel = true, true, 10
+  GetXPExhaustion = function() return 2000 end
+  texte(function() QK.Tracker:Aktualisieren() end)
+  pruefe(enthaelt("INV_Misc_Bag_10"), "Symbol an Sammelzielen")
+  pruefe(enthaelt(" %|r") and not enthaelt("Bereit zum Abgeben"), "Prozent je Quest und fertige Quests kompakt")
+  pruefe(enthaelt("erholt") and enthaelt("heute "), "Erholungsbonus und Tagesziel im Kopf")
+  QK.db.prozent, QK.db.fertigKompakt, QK.db.tagesziel = false, false, 0
+  local tt = { zeilen = {}, AddLine = function(self, t) self.zeilen[#self.zeilen + 1] = t end, Show = function() end }
+  X:TooltipErgaenzen(tt, modern and "Bergpuma" or "Flusspfoten")
+  pruefe(#tt.zeilen == 1 and tt.zeilen[1]:find(modern and "Bergpumapelz" or "Flusspfotenhalstuch", 1, true), "Questziel im Tooltip: " .. tostring(tt.zeilen[1]))
+  alleTexte = {}
+  local rat = QK.Navigation:WasJetzt()
+  pruefe(rat and enthaelt("WAS JETZT?"), "Was jetzt?: " .. tostring(rat))
+  QK.Compat:FokusSetzen(nil)
+  -- Wegpunkt-Kette
+  if modern then
+    SlashCmdList.QUESTKOMPASS("weg 10 10 Anfang")
+    SlashCmdList.QUESTKOMPASS("kette 20 20 Mitte")
+    SlashCmdList.QUESTKOMPASS("kette 30 30")
+    QK.Navigation:WegpunktLoeschen(true)
+    pruefe(QK.char.wegpunkt and QK.char.wegpunkt.name == "Mitte" and #QK.char.wegkette == 1, "Wegpunkt-Kette geht zum nächsten Punkt")
+    SlashCmdList.QUESTKOMPASS("weg")
+    pruefe(not QK.char.wegpunkt and not QK.char.wegkette, "Kette gelöscht")
+  end
+  -- automatisch teilen
+  local geteilt = 0
+  QuestLogPushQuest = function() geteilt = geteilt + 1 end
+  if modern then C_QuestLog.SetSelectedQuest = function() end else SelectQuestLogEntry = function() end end
+  gruppe, QK.db.autoTeilen = 1, true
+  feuern("QUEST_ACCEPTED", 2, modern and 750 or 11)
+  pruefe(geteilt == 1, "neue Quest automatisch geteilt")
+  gruppe, QK.db.autoTeilen = 0, false
+  -- Zeitlimit
+  if modern then
+    C_QuestLog.GetTimeAllowed = function(id) if id == 776 then return 600, 550 end end
+    alleTexte = {}
+    X:Zeitlimits()
+    pruefe(enthaelt("NOCH 60 SEKUNDEN"), "Warnung vor Ablauf des Zeitlimits")
+    C_QuestLog.GetTimeAllowed = nil
+  end
+  -- Einstellungen teilen
+  local text = X:Export()
+  local breite = QK.db.breite
+  QK.db.breite = 199
+  local ok, n = X:Import(text)
+  pruefe(ok and n > 20 and QK.db.breite == breite, ("Einstellungen exportiert und wieder eingelesen (%d)"):format(n or 0))
+  pruefe(not X:Import("Unsinn"), "fremder Text wird abgelehnt")
+  X:TeilenZeigen(true)
+  pruefe(QuestkompassTeilen and QuestkompassTeilen.gezeigt and QuestkompassTeilenText:GetText() == text, "Fenster zum Teilen")
+  -- Dauer, Statistik, Filter, Merkliste
+  local id = modern and 790 or 12
+  QK.char.angenommen[id], QK.char.geschaetzt[id] = time() - 120, nil
+  feuern("QUEST_TURNED_IN", id, 100, 5000)
+  local letzter = QK.char.tagebuch[#QK.char.tagebuch]
+  pruefe(letzter.dauer and letzter.dauer >= 120 and letzter.gold == 5000, "Dauer und Gold im Tagebuch")
+  texte(function() QK.Gebiet:Reiter("statistik") end)
+  pruefe(enthaelt("Die letzten 14 Tage") and enthaelt("Rekorde") and enthaelt("Schnellste Quest"), "Reiter Statistik")
+  QK.Gebiet:Zeigen()
+  texte(function() QK.Gebiet:Filter(4) end)
+  pruefe(enthaelt("Erledigt") and not enthaelt("Offen"), "Gebietsfilter")
+  QK.Gebiet:Filter(1)
+  X:Merken(offen.id)
+  texte(function() QK.Gebiet:Reiter("planer") end)
+  pruefe(enthaelt("Deine Merkliste"), "Merkliste im Planer")
+
   -- Sprache
   QK.englischUI = true
   pruefe(QK.L("Fertig") == "Done" and QK.L("unbekannt bleibt") == "unbekannt bleibt", "englische Texte")
@@ -599,7 +687,7 @@ local function Durchlauf(modern)
   -- Befehle
   for _, b in ipairs({ "", "", "hilfe", "einstellungen", "einrichten", "gebiet", "gebiet Westfall", "gebiet Atlantis",
       "fokus", "vorlesen", "einblenden", "diagnose", "fehler", "route", "route", "weg 12 34", "weg", "planer", "erfolge",
-      "twinks", "notiz Test", "notiz -", "help", "settings", "sprache en", "sprache auto", "sprache xx", "aufraeumen", "alts",
+      "twinks", "notiz Test", "notiz -", "wasjetzt", "fokusmodus", "fokusmodus", "tagesziel 5", "tagesziel x", "export", "import", "import QK1;breite=#260", "statistik", "kette 5 5", "help", "settings", "sprache en", "sprache auto", "sprache xx", "aufraeumen", "alts",
       "zuruecksetzen", "quatsch" }) do
     local ok, err = pcall(SlashCmdList.QUESTKOMPASS, b)
     Timer()
@@ -619,7 +707,7 @@ do
   GetLocale = function() return "enUS" end
   assert(loadfile("Locale.lua"))("Questkompass", QK)
   local fehlend, gesamt = {}, 0
-  local GLEICH = { Gold = true, Dungeon = true, Navigation = true, Navigator = true, ["Elite!"] = true, Twink = true, ["Quest "] = true, ["Questkompass:|r "] = true }
+  local GLEICH = { Gold = true, Dungeon = true, Navigation = true, Navigator = true, ["Elite!"] = true, Twink = true, ["Quest "] = true, ["Questkompass:|r "] = true, QUESTKOMPASS = true }
   for _, datei in ipairs(toc) do
     if datei:match("%.lua$") and not datei:match("Daten") and datei ~= "Locale.lua" then
       local inhalt = io.open(datei):read("*a")

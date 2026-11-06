@@ -75,6 +75,16 @@ QK.STANDARD = {
   erfolgMeldungen = true,   -- Meldung bei neuem Meilenstein
   twinks = true,            -- Twink-Hilfe in Tooltip und Questbuch
   sprache = "auto",         -- auto | de | en
+  -- 0.6
+  fokusModus = false,       -- Liste zeigt nur die Fokus-Quest
+  zielSymbole = true,       -- Symbol je Zielart
+  fertigKompakt = false,    -- fertige Quests nur als Titel mit Haken
+  prozent = false,          -- Fortschritt je Quest in Prozent
+  erholung = true,          -- Erholungsbonus in der EP-Zeile
+  tooltipZiele = true,      -- Questziele in Gegner- und Gegenstands-Tooltips
+  tagesziel = 0,            -- Quests pro Tag (0 = aus)
+  autoTeilen = false,       -- neue Quests in der Gruppe teilen
+  zeitWarnung = true,       -- Warnung vor Ablauf von Zeitlimits
 }
 
 -- Seite, mit der das Einstellungsfenster öffnet (1 = Willkommen, 2 = Barrierefreiheit)
@@ -350,6 +360,9 @@ QK:Ereignis("ADDON_LOADED", function(name)
   QuestkompassCharDB.notizen = QuestkompassCharDB.notizen or {}
   QuestkompassCharDB.angenommen = QuestkompassCharDB.angenommen or {}
   QuestkompassCharDB.erfolge = QuestkompassCharDB.erfolge or {}
+  QuestkompassCharDB.angeheftet = QuestkompassCharDB.angeheftet or {}
+  QuestkompassCharDB.merkliste = QuestkompassCharDB.merkliste or {}
+  QuestkompassCharDB.geschaetzt = QuestkompassCharDB.geschaetzt or {}
   root.charaktere = root.charaktere or {}
   root.epTabelle = root.epTabelle or {}
   QK.root = root
@@ -539,7 +552,8 @@ local ALIAS = {
   journal = "tagebuch", search = "suche", nearest = "naechste", read = "vorlesen", focus = "fokus",
   show = "einblenden", errors = "fehler", waypoint = "weg", wp = "weg", planner = "planer",
   achievements = "erfolge", milestones = "erfolge", note = "notiz", alts = "twinks", cleanup = "aufraeumen",
-  language = "sprache",
+  language = "sprache", whatnow = "wasjetzt", chain = "kette", focusmode = "fokusmodus",
+  dailygoal = "tagesziel", stats = "statistik",
 }
 
 SLASH_QUESTKOMPASS1 = "/qk"
@@ -617,6 +631,8 @@ BINDING_NAME_QUESTKOMPASS_NAECHSTE = L"Nächstgelegene Quest als Fokus"
 BINDING_NAME_QUESTKOMPASS_WEITER = L"Fokus auf die nächste Quest der Liste"
 BINDING_NAME_QUESTKOMPASS_ZURUECK = L"Fokus auf die vorige Quest der Liste"
 BINDING_NAME_QUESTKOMPASS_ROUTE = L"Route planen oder beenden"
+BINDING_NAME_QUESTKOMPASS_WASJETZT = L"Was jetzt? (bestes nächstes Ziel)"
+BINDING_NAME_QUESTKOMPASS_FOKUSMODUS = L"Fokusmodus ein oder aus"
 BINDING_NAME_QUESTKOMPASS_BUCH = L"Questbuch öffnen"
 BINDING_NAME_QUESTKOMPASS_PLANER = L"Planer öffnen"
 BINDING_NAME_QUESTKOMPASS_EINSTELLUNGEN = L"Einstellungen öffnen"

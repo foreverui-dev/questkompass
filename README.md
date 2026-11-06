@@ -9,8 +9,10 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 - **Navigation:** kleiner Kompasspfeil an jeder Quest, großer schwebender Fokuspfeil mit Entfernung und Ankunftszeit, automatischer Fokus auf die nächste Quest.
 - **Questgegenstände** lassen sich direkt an der Quest benutzen. Quests mit Zeitlimit zeigen einen Countdown.
 - **Erfahrungsvorschau:** was die fertigen Quests zusammen bringen, und ob es für den Stufenaufstieg reicht.
-- **Questbuch** mit sechs Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch), Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde), Planer (Stufenplaner, Vorschläge, Ruf, tägliche Quests, Aufräumen) und Erfolge (Meilensteine).
-- **Route und Wegpunkte:** kürzeste Route durch alle Quests der Karte, eigene Wegpunkte per Befehl oder Alt+Klick auf die Weltkarte, Pfeil am Minikartenrand, Abgabe-Erinnerung.
+- **Questbuch** mit sieben Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch), Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde), Planer (Stufenplaner, Merkliste, Vorschläge, Ruf, tägliche Quests, Aufräumen), Erfolge (Meilensteine) und Statistik (Quests pro Tag, Rekorde). Das Gebiet lässt sich filtern.
+- **„Was jetzt?“:** ein Knopf oder eine Taste wählt das sinnvollste nächste Ziel. Dazu Fokusmodus, angeheftete Quests, Symbole an den Zielen, Prozent je Quest und ein Tagesziel.
+- **Questziele in Tooltips** von Gegnern und Gegenständen.
+- **Route und Wegpunkte:** kürzeste Route durch alle Quests der Karte, eigene Wegpunkte und Wegpunkt-Ketten per Befehl oder Alt+Klick auf die Weltkarte, Pfeil am Minikartenrand, Abgabe-Erinnerung.
 - **Gemeinschaft:** Twink-Hilfe (was andere Charaktere schon erledigt haben), Gruppen-Abgleich („Kumpel 3/8“), fertige Suchnachricht für Gruppenquests, Notizen je Quest.
 - **Kleine Helfer:** Meldung und Klang bei Fortschritt, Fortschritt an die Gruppe, Warnung bei vollem Questlog, automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp, Knopf an der Minikarte.
 - **Barrierefreiheit:** Vorlesen über die Sprachausgabe des Spiels, hoher Kontrast, Farbenblind-Modus (Blau/Orange, Status als Wort), alles größer (Liste bis 200 %), weniger Bewegung. Alles über Tastatur erreichbar, Questbuch und Assistent auch mit Gamepad und Pfeiltasten.
@@ -35,6 +37,12 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 | `/qk planer` · `/qk erfolge` | Planer und Meilensteine im Questbuch |
 | `/qk notiz [Text]` | Notiz zur Fokus-Quest |
 | `/qk twinks` | deine Charaktere und ihre erledigten Quests |
+| `/qk wasjetzt` | das sinnvollste nächste Ziel als Fokus |
+| `/qk kette X Y [Name]` | Wegpunkt hinten an die Kette hängen |
+| `/qk fokusmodus` | Liste zeigt nur die Fokus-Quest |
+| `/qk tagesziel N` | Tagesziel setzen (0 = aus) |
+| `/qk statistik` | Quests pro Tag und Rekorde |
+| `/qk export` · `/qk import` | Einstellungen als Text teilen |
 | `/qk sprache de \| en \| auto` | Sprache der Oberfläche |
 | `/qk fokus` | Fokus aufheben |
 | `/qk einblenden` | ausgeblendete Quests wieder zeigen |

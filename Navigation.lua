@@ -157,12 +157,36 @@ function N:WegpunktLoeschen(erreicht)
   local name = QK.char.wegpunkt.name
   QK.char.wegpunkt = nil
   if C_Map and C_Map.ClearUserWaypoint then pcall(C_Map.ClearUserWaypoint) end
+  local kette = QK.char.wegkette
   if erreicht then
-    if QK.Meldungen and QK.db.meldungen then QK.Meldungen:Zeigen(L"WEGPUNKT ERREICHT", name) end
+    local naechster = kette and table.remove(kette, 1)
+    if naechster then
+      if QK.Meldungen and QK.db.meldungen then
+        QK.Meldungen:Zeigen(L"WEGPUNKT ERREICHT", (L"weiter zu %s (%d übrig)"):format(naechster.name, #kette))
+      end
+      QK.char.wegpunkt = naechster
+      if C_Map and C_Map.SetUserWaypoint and UiMapPoint and UiMapPoint.CreateFromCoordinates then
+        N.eigenerPunkt = true
+        pcall(C_Map.SetUserWaypoint, UiMapPoint.CreateFromCoordinates(naechster.karte, naechster.x, naechster.y))
+        N.eigenerPunkt = false
+      end
+    elseif QK.Meldungen and QK.db.meldungen then
+      QK.Meldungen:Zeigen(L"WEGPUNKT ERREICHT", name)
+    end
   else
+    QK.char.wegkette = nil
     QK:Meldung(L"Wegpunkt gelöscht.")
   end
   if QK.Pfeil then QK.Pfeil:Aktualisieren() end
+end
+
+-- Wegpunkt-Kette: weitere Punkte, die nacheinander angesteuert werden
+function N:KetteAnhaengen(karte, x, y, name)
+  if not N:Wegpunkt() then N:WegpunktSetzen(karte, x, y, name) return end
+  QK.char.wegkette = QK.char.wegkette or {}
+  local kette = QK.char.wegkette
+  kette[#kette + 1] = { karte = karte, x = x, y = y, name = name or (L"Wegpunkt %d"):format(#kette + 2) }
+  QK:Meldung(L"Wegpunkt %s an die Kette gehängt (%d warten).", kette[#kette].name, #kette)
 end
 
 -- Wegpunkt auf der aktuellen Karte (umgerechnet), sonst nil
@@ -174,7 +198,7 @@ end
 
 local function Zahl(t) return tonumber(((t or ""):gsub(",", "."))) end
 
-local function WegBefehl(rest)
+local function WegBefehl(rest, anhaengen)
   if rest == "" or rest == "aus" or rest == "löschen" or rest == "loeschen" then
     if N:Wegpunkt() then N:WegpunktLoeschen() else QK:Meldung(L"Beispiel: /qk weg 45,2 60,8 Brunnen") end
     return
@@ -185,7 +209,12 @@ local function WegBefehl(rest)
   QK.Kompass:Auffrischen()
   local karte = QK.Kompass:Karte()
   if not karte then QK:Meldung(L"die aktuelle Karte ist nicht bekannt.") return end
-  N:WegpunktSetzen(karte, x / 100, y / 100, name ~= "" and name or nil)
+  if anhaengen then
+    N:KetteAnhaengen(karte, x / 100, y / 100, name ~= "" and name or nil)
+  else
+    QK.char.wegkette = nil
+    N:WegpunktSetzen(karte, x / 100, y / 100, name ~= "" and name or nil)
+  end
 end
 
 -- Alt+Klick auf die Weltkarte setzt einen Wegpunkt
@@ -200,7 +229,8 @@ local function KarteVerbinden()
       local x, y = self:GetNormalizedCursorPosition()
       local karte = wm.GetMapID and wm:GetMapID()
       if karte and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
-        N:WegpunktSetzen(karte, x, y, L"Kartenpunkt")
+        if IsShiftKeyDown() then N:KetteAnhaengen(karte, x, y, nil)
+        else QK.char.wegkette = nil; N:WegpunktSetzen(karte, x, y, L"Kartenpunkt") end
       end
     end)
   end)
@@ -277,6 +307,65 @@ end
 ---------------------------------------------------------------------------
 -- Start
 ---------------------------------------------------------------------------
+-- Restweg der Route ab der aktuellen Station (Luftlinie), Anzahl offener Stationen
+function N:Restweg()
+  local r = QK.char.route
+  if not r then return nil end
+  local px, py = QK.Kompass:Spieler()
+  local summe, offen, lx, ly = 0, 0, px, py
+  for _, st in ipairs(r.stationen) do
+    if not st.erledigt then
+      offen = offen + 1
+      local x, y = QK.Kompass:Ziel(st.id)
+      if x and lx then summe = summe + QK.Kompass:Abstand(lx, ly, x, y); lx, ly = x, y end
+    end
+  end
+  return summe, offen, #r.stationen
+end
+
+---------------------------------------------------------------------------
+-- „Was jetzt?“: wählt das sinnvollste nächste Ziel
+---------------------------------------------------------------------------
+function N:WasJetzt()
+  local quests = QK.Compat:Questlog()
+  local abgabe, abgabeD, naechste, naechsteD, fertigIrgendwo
+  for _, q in ipairs(quests) do
+    if not QK.char.ausgeblendet[q.id] and not q.gescheitert then
+      local d = QK.Kompass:Entfernung(q.id)
+      if q.fertig then
+        fertigIrgendwo = fertigIrgendwo or q
+        if d and (not abgabeD or d < abgabeD) then abgabe, abgabeD = q, d end
+      elseif d and (not naechsteD or d < naechsteD) then
+        naechste, naechsteD = q, d
+      end
+    end
+  end
+  local q, text
+  if abgabe and (abgabeD < 300 or not naechste) then
+    q, text = abgabe, (L"Abgeben: %s"):format(abgabe.titel)
+  elseif naechste then
+    q, text = naechste, (L"Weiter mit: %s"):format(naechste.titel)
+  elseif fertigIrgendwo then
+    q, text = fertigIrgendwo, (L"Abgeben: %s"):format(fertigIrgendwo.titel)
+  end
+  if q then
+    QK.Compat:FokusSetzen(q.id)
+    local d = QK.Kompass:Entfernung(q.id)
+    if d then text = text .. " (" .. QK:EntfernungText(d) .. ")" end
+    QK:Anwenden()
+  else
+    local v = QK.Planer and QK.Planer:Vorschlaege(1)[1]
+    if v then
+      text = (L"Neue Quest holen: %s in %s"):format(v.name or ("Quest " .. v.id), QK:GebietName(v.gebiet) or "?")
+    else
+      text = L"Keine Quest im Log. Schau im Questbuch nach neuen Aufgaben."
+    end
+  end
+  if QK.Meldungen then QK.Meldungen:Zeigen(L"WAS JETZT?", text) end
+  QK:Sprechen(text, true)
+  return text
+end
+
 function N:Start()
   if Minimap then
     randPfeil = CreateFrame("Frame", "QuestkompassRandpfeil", Minimap)
@@ -328,4 +417,7 @@ QK:Befehl({ "route" }, function(rest)
   if rest == "aus" or (rest == "" and QK.char.route) then N:RouteBeenden() else N:RoutePlanen() end
 end, L"/qk route – kürzeste Route durch alle Quests der Karte (nochmal: beenden)")
 QK:Befehl({ "weg", "wegpunkt" }, WegBefehl, L"/qk weg X Y [Name] – eigener Wegpunkt, Alt+Klick auf die Weltkarte geht auch")
+QK:Befehl({ "kette" }, function(rest) WegBefehl(rest, true) end, L"/qk kette X Y [Name] – Wegpunkt hinten anhängen (Umschalt+Alt+Klick auf die Karte)")
+QK:Befehl({ "wasjetzt", "jetzt" }, function() N:WasJetzt() end, L"/qk wasjetzt – das sinnvollste nächste Ziel als Fokus")
+QK.tasten.wasjetzt = function() N:WasJetzt() end
 QK.tasten.route = function() if QK.char.route then N:RouteBeenden() else N:RoutePlanen() end end
