@@ -624,6 +624,39 @@ local function Durchlauf(modern)
   local tt = { zeilen = {}, AddLine = function(self, t) self.zeilen[#self.zeilen + 1] = t end, Show = function() end }
   X:TooltipErgaenzen(tt, modern and "Bergpuma" or "Flusspfoten")
   pruefe(#tt.zeilen == 1 and tt.zeilen[1]:find(modern and "Bergpumapelz" or "Flusspfotenhalstuch", 1, true), "Questziel im Tooltip: " .. tostring(tt.zeilen[1]))
+  -- Questgegenstände (1.1)
+  do
+    local GG = QK.Gegenstaende
+    GG:Einlesen()
+    local name = modern and "Bergpumapelz" or "Flusspfotenhalstuch"
+    local z = GG:Zeilen(name)
+    pruefe(#z >= 1 and z[1][1]:find(modern and "/10" or "/8", 1, true), "Gegenstand zeigt eigene Quest: " .. tostring(z[1] and z[1][1]))
+    pruefe(QK.root.questGegenstaende[name:lower()] ~= nil, "Gegenstand kontoweit gelernt")
+    local fertigName
+    for _, q in ipairs(QK.Compat:Questlog()) do
+      for _, ziel in ipairs(q.ziele) do if ziel.art == "item" and (ziel.fertig or q.fertig) then fertigName = ziel.text end end
+    end
+    if fertigName then
+      local f = GG:Zeilen(fertigName)
+      pruefe(f[1] and f[1][1]:find("bis zur Abgabe behalten", 1, true), "fertiges Ziel: Gegenstand behalten")
+    end
+    QK.root.questGegenstaende["leinenstoff"] = { n = "Leinenstoff", q = { [99999] = 6 } }
+    QK.root.charaktere["Anna-Testrealm"] = { name = "Anna", erledigt = {}, brauche = { leinenstoff = { { 123, "Stoff für Anna", 2, 5, false } } } }
+    local l = GG:Zeilen("Leinenstoff")
+    local alle = {}
+    for _, e in ipairs(l) do alle[#alle + 1] = e[1] end
+    alle = table.concat(alle, "\n")
+    pruefe(alle:find("^Anna: .- 2/5"), "Gegenstand zeigt Bedarf anderer Charaktere")
+    pruefe(alle:find("Später für: ", 1, true) and alle:find("(6)", 1, true), "Gegenstand zeigt gelernte spätere Quest")
+    local tg = { zeilen = {}, AddLine = function(self, t) self.zeilen[#self.zeilen + 1] = t end, Show = function() end }
+    X:GegenstandTooltip(tg, "Leinenstoff")
+    pruefe(tg.zeilen[1] == QK.L"Für Quests gebraucht:" and #tg.zeilen == 3, "Gegenstands-Tooltip mit Überschrift")
+    QK.Twinks:Einlesen()
+    pruefe(QK.Twinks:Ich().brauche ~= nil, "Twink-Einlesen behält Questgegenstände")
+    SlashCmdList.QUESTKOMPASS("gegenstaende")
+    SlashCmdList.QUESTKOMPASS("questitems")
+    QK.root.charaktere["Anna-Testrealm"], QK.root.questGegenstaende["leinenstoff"] = nil, nil
+  end
   alleTexte = {}
   local rat = QK.Navigation:WasJetzt()
   pruefe(rat and enthaelt("WAS JETZT?"), "Was jetzt?: " .. tostring(rat))

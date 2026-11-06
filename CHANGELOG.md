@@ -1,5 +1,15 @@
 # Questkompass
 
+## 1.1.0
+
+- Questgegenstände: Im Tooltip eines Gegenstands steht, für welche Quests er noch gebraucht wird
+  - eigene Quests im Log mit Stand, bei fertigem Ziel der Hinweis „bis zur Abgabe behalten“
+  - Quests deiner anderen Charaktere (praktisch an der Bank)
+  - Quests, die das Addon schon einmal mit diesem Gegenstand gesehen hat und die dieser Charakter noch machen kann
+- Questkompass lernt diese Gegenstände kontoweit aus dem Questlog aller Charaktere und wird so mit der Zeit vollständiger
+- `/qk gegenstaende` listet alles, was deine Quests gerade brauchen
+- Auch in verlinkten Gegenständen im Chat; im Assistenten unter „Feinschliff“ abschaltbar
+
 ## 1.0.0 – erste öffentliche Version
 
 20 neue Funktionen:

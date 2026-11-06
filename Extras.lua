@@ -93,6 +93,15 @@ function X:TooltipErgaenzen(tooltip, name)
   if dazu then tooltip:Show() end
 end
 
+-- Gegenstände: ausführliche Questliste (Gegenstaende.lua) oder nur die offenen Ziele
+function X:GegenstandTooltip(tooltip, name)
+  if QK.db.questGegenstaende and QK.Gegenstaende then
+    QK:Sicher("Tooltip", QK.Gegenstaende.Tooltip, QK.Gegenstaende, tooltip, name)
+  else
+    QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, name)
+  end
+end
+
 local function TooltipsVerbinden()
   if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall and Enum and Enum.TooltipDataType then
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
@@ -101,17 +110,22 @@ local function TooltipsVerbinden()
       QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, name)
     end)
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
-      if tooltip ~= GameTooltip then return end
+      if tooltip ~= GameTooltip and tooltip ~= ItemRefTooltip then return end
       local name = tooltip.GetItem and tooltip:GetItem()
-      QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, name)
+      X:GegenstandTooltip(tooltip, name)
     end)
   elseif GameTooltip and GameTooltip.HookScript then
     GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
       QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, (tooltip:GetUnit()))
     end)
     GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
-      QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, (tooltip:GetItem()))
+      X:GegenstandTooltip(tooltip, (tooltip:GetItem()))
     end)
+    if ItemRefTooltip and ItemRefTooltip.HookScript then
+      ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
+        X:GegenstandTooltip(tooltip, (tooltip:GetItem()))
+      end)
+    end
   end
 end
 

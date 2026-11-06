@@ -25,6 +25,7 @@ function TW:Einlesen()
     name = name, klasse = klasse, stufe = UnitLevel("player"),
     fraktion = UnitFactionGroup("player"), zeit = time(),
     erledigt = QK.Compat:Erledigte(),
+    brauche = alt and alt.brauche,
   }
   -- Abgaben dieser Sitzung behalten, falls der Server sie noch nicht meldet
   if alt and alt.erledigt then

@@ -24,6 +24,7 @@ Meldungen.lua
 Automatik.lua
 Navigation.lua
 Twinks.lua
+Gegenstaende.lua
 Gruppe.lua
 Notizen.lua
 Planer.lua
