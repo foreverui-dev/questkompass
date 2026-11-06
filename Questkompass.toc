@@ -25,6 +25,7 @@ Automatik.lua
 Navigation.lua
 Twinks.lua
 Gegenstaende.lua
+Plaketten.lua
 Gruppe.lua
 Notizen.lua
 Planer.lua

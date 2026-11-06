@@ -298,7 +298,8 @@ local PRUEFEN = {
   "C_Map.GetMapWorldSize", "C_GossipInfo.GetAvailableQuests", "C_GossipInfo.GetActiveQuests",
   "GetQuestLogTitle", "GetNumQuestLogEntries", "QuestMapFrame_OpenToQuestDetails", "GetPlayerFacing",
   "ObjectiveTrackerFrame", "QuestWatchFrame", "WatchFrame", "Settings.RegisterCanvasLayoutCategory",
-  "InterfaceOptions_AddCategory", "MenuUtil.CreateContextMenu",
+  "InterfaceOptions_AddCategory", "MenuUtil.CreateContextMenu", "C_NamePlate.GetNamePlateForUnit",
+  "C_TooltipInfo.GetUnit", "C_QuestLog.UnitIsRelatedToActiveQuest", "C_Item.GetItemInfo",
 }
 
 local function vorhanden(pfad)

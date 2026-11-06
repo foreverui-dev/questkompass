@@ -84,6 +84,7 @@ QK.STANDARD = {
   tooltipZiele = true,      -- Questziele in Gegner- und Gegenstands-Tooltips
   tagesziel = 0,            -- Quests pro Tag (0 = aus)
   autoTeilen = false,       -- neue Quests in der Gruppe teilen
+  questPlaketten = true,    -- Symbol an Quest-Gegnern (Namensplakette)
   questGegenstaende = true, -- am Gegenstand zeigen, für welche Quests er gebraucht wird
   zeitWarnung = true,       -- Warnung vor Ablauf von Zeitlimits
 }

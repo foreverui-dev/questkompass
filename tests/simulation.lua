@@ -668,6 +668,43 @@ local function Durchlauf(modern)
     SlashCmdList.QUESTKOMPASS("questitems")
     QK.root.charaktere["Anna-Testrealm"], QK.root.questGegenstaende["leinenstoff"] = nil, nil
   end
+  -- Symbol an Quest-Gegnern (Namensplaketten)
+  do
+    local P = QK.Plaketten
+    local plaketten = {}
+    C_NamePlate = { GetNamePlateForUnit = function(u) plaketten[u] = plaketten[u] or NeuesObjekt("Frame"); return plaketten[u] end }
+    local echterName = UnitName
+    UnitName = function(u)
+      if u == "nameplate1" then return modern and "Bergpuma" or "Hogger" end
+      if u == "nameplate2" then return "Hase" end
+      return echterName(u)
+    end
+    feuern("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    feuern("NAME_PLATE_UNIT_ADDED", "nameplate2")
+    local art = P:Pruefen("nameplate1")
+    pruefe(art == "item", "Quest-Gegner erkannt: " .. tostring(art))
+    pruefe(P:Pruefen("nameplate2") == nil, "anderer Gegner ohne Symbol")
+    local zahl = 0
+    for _, f in ipairs(frames) do if f.bild and f.gezeigt then zahl = zahl + 1 end end
+    pruefe(zahl == 1, "genau ein Symbol an der Namensplakette: " .. zahl)
+    -- Tooltip-Auskunft des Spiels
+    Enum.TooltipDataLineType = Enum.TooltipDataLineType or { QuestObjective = 8 }
+    C_TooltipInfo = { GetUnit = function(u)
+      if u == "nameplate2" then return { lines = { { type = 0, leftText = "Hase" }, { type = 8, leftText = "Wolfsfleisch: 2/8" } } } end
+      return { lines = {} }
+    end }
+    local art2, stand2 = P:Pruefen("nameplate2")
+    pruefe(art2 == "monster" and stand2 == "2/8", "Ziel aus der Tooltip-Auskunft")
+    QK.db.questPlaketten = false
+    P:AlleAktualisieren()
+    zahl = 0
+    for _, f in ipairs(frames) do if f.bild and f.gezeigt then zahl = zahl + 1 end end
+    pruefe(zahl == 0, "Symbole abschaltbar")
+    QK.db.questPlaketten = true
+    feuern("NAME_PLATE_UNIT_REMOVED", "nameplate1")
+    feuern("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+    UnitName, C_NamePlate, C_TooltipInfo = echterName, nil, nil
+  end
   alleTexte = {}
   local rat = QK.Navigation:WasJetzt()
   pruefe(rat and enthaelt("WAS JETZT?"), "Was jetzt?: " .. tostring(rat))

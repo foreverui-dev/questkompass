@@ -9,6 +9,7 @@
 - Questkompass lernt diese Gegenstände kontoweit aus dem Questlog aller Charaktere und wird so mit der Zeit vollständiger
 - `/qk gegenstaende` listet alles, was deine Quests gerade brauchen
 - Auch in verlinkten Gegenständen im Chat; im Assistenten unter „Feinschliff“ abschaltbar
+- Symbol an Quest-Gegnern: Gegner in der Nähe, die du für eine Quest besiegen musst, bekommen einen Totenkopf an der Namensplakette, bei Questgegenständen einen Beutel, dazu den Stand (z. B. 3/10). Braucht eingeblendete Namensplaketten (Taste V)
 
 Behoben:
 

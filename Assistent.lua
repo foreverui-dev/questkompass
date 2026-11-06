@@ -326,6 +326,7 @@ local function SeitenBauen()
       { L"Erholungsbonus zeigen", L"Erholte EP in der Erfahrungszeile.", "erholung" },
       { L"Ziele in Tooltips", L"Gegner und Gegenstände zeigen deine Questziele.", "tooltipZiele" },
       { L"Questgegenstände", L"Am Gegenstand: für welche Quests er noch gebraucht wird.", "questGegenstaende" },
+      { L"Symbol an Quest-Gegnern", L"Totenkopf oder Beutel an der Namensplakette.", "questPlaketten" },
       { L"Automatisch teilen", L"Neue Quests in der Gruppe teilen.", "autoTeilen" },
       { L"Zeitlimit-Warnung", L"Hinweis 60 und 10 Sekunden vor Ablauf.", "zeitWarnung" },
       { L"Fokusmodus", L"Liste zeigt nur die Fokus-Quest.", "fokusModus" },

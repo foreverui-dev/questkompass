@@ -13,6 +13,7 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 - **„Was jetzt?“:** ein Knopf oder eine Taste wählt das sinnvollste nächste Ziel. Dazu Fokusmodus, angeheftete Quests, Symbole an den Zielen, Prozent je Quest und ein Tagesziel.
 - **Questziele in Tooltips** von Gegnern und Gegenständen.
 - **Questgegenstände:** Am Gegenstand steht, für welche Quests er noch gebraucht wird, auch bei deinen anderen Charakteren (`/qk gegenstaende`).
+- **Symbol an Quest-Gegnern:** Totenkopf oder Beutel mit Stand an der Namensplakette von Gegnern in der Nähe, die eine Quest braucht.
 - **Route und Wegpunkte:** kürzeste Route durch alle Quests der Karte, eigene Wegpunkte und Wegpunkt-Ketten per Befehl oder Alt+Klick auf die Weltkarte, Pfeil am Minikartenrand, Abgabe-Erinnerung.
 - **Gemeinschaft:** Twink-Hilfe (was andere Charaktere schon erledigt haben), Gruppen-Abgleich („Kumpel 3/8“), fertige Suchnachricht für Gruppenquests, Notizen je Quest.
 - **Kleine Helfer:** Meldung und Klang bei Fortschritt, Fortschritt an die Gruppe, Warnung bei vollem Questlog, automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp, Knopf an der Minikarte.
