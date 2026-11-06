@@ -1,6 +1,6 @@
 # Questkompass
 
-## 0.6.0
+## 1.0.0 – erste öffentliche Version
 
 20 neue Funktionen:
 
