@@ -274,6 +274,13 @@ function QK.Zahl(v)
   return v
 end
 
+-- Dasselbe für Texte (z. B. Namen von Einheiten): nil, wenn das Spiel ihn geschützt liefert.
+function QK.Text(v)
+  if type(v) ~= "string" then return nil end
+  if issecretvalue and issecretvalue(v) then return nil end
+  return v
+end
+
 function QK:Sicher(name, fn, ...)
   local ok, fehler = pcall(fn, ...)
   if not ok then

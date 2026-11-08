@@ -578,6 +578,11 @@ local function Durchlauf(modern)
     QK.Pfeil:Aktualisieren()
     QK.Tracker:Aktualisieren()
     pruefe(QK.Zahl(7) == nil and QK.Zahl(3) == 3 and QK.Zahl("x") == nil, "QK.Zahl erkennt geschützte Werte")
+    issecretvalue = function(v) return v == 7 or v == "Geheimname" end
+    local tg = { zeilen = {}, AddLine = function(self, t) self.zeilen[#self.zeilen + 1] = t end, Show = function() end }
+    QK.Extras:TooltipErgaenzen(tg, "Geheimname")
+    QK.Extras:GegenstandTooltip(tg, "Geheimname", "Geheimname")
+    pruefe(QK.Text("Geheimname") == nil and #QK.Extras:ZieleFuer("Geheimname") == 0 and #tg.zeilen == 0, "geschützte Namen werden übersprungen")
     pruefe(#(QK.root.fehler or {}) == fehlerVorher and QuestkompassPfeil.gezeigt, "Pfeil und Liste laufen mit geschütztem Tempo")
     issecretvalue = echterVergleich
     QK.Navigation:Minikarte()

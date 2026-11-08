@@ -15,11 +15,7 @@ local marken = {}     -- Namensplakette -> unser Rahmen
 local einheiten = {}  -- unit -> true, solange die Plakette sichtbar ist
 
 -- Text, den Addons benutzen dürfen (geschützte Werte überspringen)
-local function Text(v)
-  if type(v) ~= "string" then return nil end
-  if issecretvalue and issecretvalue(v) then return nil end
-  return v
-end
+local function Text(v) return QK.Text(v) end
 
 -- Ziellinien aus dem Einheiten-Tooltip (moderne Clients): { text } offener Ziele
 local function TooltipZiele(unit)

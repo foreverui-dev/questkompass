@@ -10,7 +10,7 @@ local L = QK.L
 local SYMBOL = "|TInterface\\GossipFrame\\ActiveQuestIcon:0:0:0:0|t "
 local MAX_SPAETER = 4
 
-local function Schluessel(name) return name and name:lower():gsub("^%s+", ""):gsub("%s+$", "") end
+local function Schluessel(name) name = QK.Text(name); return name and name:lower():gsub("^%s+", ""):gsub("%s+$", "") end
 
 local function IstGegenstand(z)
   return z.art == "item" and z.text and #z.text >= 3

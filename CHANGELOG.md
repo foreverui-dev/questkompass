@@ -61,6 +61,7 @@ Behoben:
 
 - Fehlermeldungen von Fokuspfeil und Zielliste („secret number value“): Laufgeschwindigkeit, Position und Blickrichtung, die das Spiel geschützt liefert, werden jetzt übersprungen statt verglichen
 - Belohnungs-Markierung und Belohnungs-Vergleich liefen ins Leere, weil der Client GetItemInfo nur noch unter C_Item anbietet
+- Fehler „secret string value“ in Tooltips (Extras.lua): geschützte Namen von Gegnern und Gegenständen werden jetzt übersprungen
 
 ## 1.0.0 – erste öffentliche Version
 

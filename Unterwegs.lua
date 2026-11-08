@@ -147,6 +147,7 @@ end
 -- Questgegenstände: Händler, Bank, Beute und Verkauf
 ---------------------------------------------------------------------------
 local function Gebraucht(name)
+  name = QK.Text(name)
   if not name or not QK.Gegenstaende then return nil end
   local z = QK.Gegenstaende:Zeilen(name)
   if #z == 0 then return nil end
@@ -218,7 +219,8 @@ end
 
 local beuteGemeldet = {}
 function U:Beute(text)
-  if not QK.db.questGegenstaende or type(text) ~= "string" then return end
+  text = QK.Text(text)
+  if not QK.db.questGegenstaende or not text then return end
   local muster = LOOT_ITEM_SELF and LOOT_ITEM_SELF:match("^(.-)%%s")
   if muster and muster ~= "" and not text:find(muster, 1, true) then
     local mehr = LOOT_ITEM_SELF_MULTIPLE and LOOT_ITEM_SELF_MULTIPLE:match("^(.-)%%s")

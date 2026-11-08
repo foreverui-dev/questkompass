@@ -53,6 +53,7 @@ end
 -- Offene Ziele, deren Text den Namen enthält: { { quest, ziel } }
 function X:ZieleFuer(name)
   local treffer = {}
+  name = QK.Text(name)
   if not name or #name < 3 then return treffer end
   local n = name:lower()
   for _, q in ipairs(Questlog()) do
@@ -80,6 +81,7 @@ local function SchonDrin(tooltip, text)
 end
 
 function X:TooltipErgaenzen(tooltip, name)
+  name = QK.Text(name)
   if not QK.db.tooltipZiele then return end
   local dazu = false
   for _, t in ipairs(X:ZieleFuer(name)) do
@@ -95,6 +97,7 @@ end
 
 -- Gegenstände: ausführliche Questliste (Gegenstaende.lua) oder nur die offenen Ziele
 function X:GegenstandTooltip(tooltip, name, link)
+  name, link = QK.Text(name), QK.Text(link)
   if QK.db.questGegenstaende and QK.Gegenstaende then
     QK:Sicher("Tooltip", QK.Gegenstaende.Tooltip, QK.Gegenstaende, tooltip, name, link)
   else
