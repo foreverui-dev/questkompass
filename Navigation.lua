@@ -199,6 +199,8 @@ end
 local function Zahl(t) return tonumber(((t or ""):gsub(",", "."))) end
 
 local function WegBefehl(rest, anhaengen)
+  if rest == "teilen" or rest == "share" then QK.Unterwegs:WegpunktTeilen() return end
+  if rest == "übernehmen" or rest == "uebernehmen" or rest == "accept" then QK.Unterwegs:AngebotAnnehmen() return end
   if rest == "" or rest == "aus" or rest == "löschen" or rest == "loeschen" then
     if N:Wegpunkt() then N:WegpunktLoeschen() else QK:Meldung(L"Beispiel: /qk weg 45,2 60,8 Brunnen") end
     return

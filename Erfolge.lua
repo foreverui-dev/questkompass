@@ -30,6 +30,14 @@ local function Zaehlen()
   for _ in pairs(QK.root.charaktere or {}) do n = n + 1 end
   s.charaktere = n
   s.routen = QK.char.routenGeschafft or 0
+  local z = QK.char.zaehler or {}
+  s.ziele = z.ziele or 0
+  s.leiche = z.leiche or 0
+  s.nacht, s.frueh = 0, 0
+  for _, e in ipairs(QK.char.tagebuch) do
+    local stunde = tonumber(date("%H", e.zeit))
+    if stunde and stunde < 4 then s.nacht = s.nacht + 1 elseif stunde and stunde >= 5 and stunde < 7 then s.frueh = s.frueh + 1 end
+  end
   return s
 end
 
@@ -55,6 +63,10 @@ dazu(Stufen("elite", nil, L"%d Elitequests erledigt", "elite", {
 dazu(Stufen("tag", nil, L"%d Quests an einem Tag", "heute", { { 10, L"Fleißiger Tag" }, { 30, L"Questmarathon" } }))
 dazu(Stufen("buch", nil, L"%d Quests im Tagebuch", "tagebuch", { { 100, L"Tagebuchschreiber" } }))
 dazu(Stufen("route", nil, L"%d Routen geschafft", "routen", { { 1, L"Navigator" }, { 10, L"Routenprofi" } }))
+dazu(Stufen("ziele", nil, L"%d Questziele vorangebracht", "ziele", { { 100, L"Zielstrebig" }, { 1000, L"Unermüdlich" } }))
+dazu(Stufen("nacht", nil, L"%d Quests zwischen Mitternacht und vier Uhr", "nacht", { { 1, L"Nachteule" } }))
+dazu(Stufen("frueh", nil, L"%d Quests zwischen fünf und sieben Uhr", "frueh", { { 1, L"Frühaufsteher" } }))
+dazu(Stufen("leiche", nil, L"%d Mal mit dem Leichen-Pfeil zurückgefunden", "leiche", { { 1, L"Zurück ins Leben" } }))
 dazu(Stufen("twink", nil, L"%d Charaktere mit Questkompass", "charaktere", { { 3, L"Twink-Familie" } }))
 E.LISTE = LISTE
 

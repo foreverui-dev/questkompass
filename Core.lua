@@ -87,6 +87,21 @@ QK.STANDARD = {
   questPlaketten = true,    -- Symbol an Quest-Gegnern (Namensplakette)
   questGegenstaende = true, -- am Gegenstand zeigen, für welche Quests er gebraucht wird
   zeitWarnung = true,       -- Warnung vor Ablauf von Zeitlimits
+  -- 1.1
+  plakettenGroesse = "normal", -- klein | normal | gross
+  questGegnerTon = false,   -- Hinweiston, wenn ein Quest-Gegner auftaucht
+  zielHervorheben = true,   -- anvisierter Quest-Gegner markiert seine Quest in der Liste
+  verkaufsWarnung = true,
+  haendlerHinweis = true,
+  bankHinweis = true,
+  questText = true,         -- Questtext im Tooltip der Liste
+  zielKlang = false,        -- Ton bei jedem fertigen Ziel
+  prognose = true,          -- Sitzung und Stufenprognose in Tooltips
+  leichenPfeil = true,
+  fokusWeiter = false,      -- fertige Fokus-Quest: Fokus springt zur nächsten
+  geteiltAnnehmen = false,  -- von Gruppenmitgliedern geteilte Quests annehmen
+  gruppenWarnung = true,
+  dialogVorlesen = true,    -- Questdialog und Belohnungen vorlesen (wenn Vorlesen an ist)
 }
 
 -- Seite, mit der das Einstellungsfenster öffnet (1 = Willkommen, 2 = Barrierefreiheit)
@@ -376,6 +391,7 @@ QK:Ereignis("ADDON_LOADED", function(name)
   QuestkompassCharDB.angeheftet = QuestkompassCharDB.angeheftet or {}
   QuestkompassCharDB.merkliste = QuestkompassCharDB.merkliste or {}
   QuestkompassCharDB.geschaetzt = QuestkompassCharDB.geschaetzt or {}
+  QuestkompassCharDB.zaehler = QuestkompassCharDB.zaehler or {}
   root.charaktere = root.charaktere or {}
   root.epTabelle = root.epTabelle or {}
   root.questGegenstaende = root.questGegenstaende or {}
@@ -567,7 +583,7 @@ local ALIAS = {
   show = "einblenden", errors = "fehler", waypoint = "weg", wp = "weg", planner = "planer",
   achievements = "erfolge", milestones = "erfolge", note = "notiz", alts = "twinks", cleanup = "aufraeumen",
   language = "sprache", whatnow = "wasjetzt", chain = "kette", focusmode = "fokusmodus",
-  dailygoal = "tagesziel", stats = "statistik", questitems = "gegenstaende",
+  dailygoal = "tagesziel", stats = "statistik", questitems = "gegenstaende", journaltext = "tagebuchtext",
 }
 
 SLASH_QUESTKOMPASS1 = "/qk"
@@ -651,6 +667,9 @@ BINDING_NAME_QUESTKOMPASS_BUCH = L"Questbuch öffnen"
 BINDING_NAME_QUESTKOMPASS_PLANER = L"Planer öffnen"
 BINDING_NAME_QUESTKOMPASS_EINSTELLUNGEN = L"Einstellungen öffnen"
 BINDING_NAME_QUESTKOMPASS_VORLESEN = L"Fokus-Quest vorlesen"
+BINDING_NAME_QUESTKOMPASS_GEGNER = L"Quest-Gegner in der Nähe ansagen"
+BINDING_NAME_QUESTKOMPASS_POSITION = L"Eigene Position in den Chat"
+BINDING_NAME_QUESTKOMPASS_SITZUNG = L"Sitzungsbericht"
 
 function QK:Taste(was)
   QK:Sicher("Taste", function()

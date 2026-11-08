@@ -94,9 +94,9 @@ function X:TooltipErgaenzen(tooltip, name)
 end
 
 -- Gegenstände: ausführliche Questliste (Gegenstaende.lua) oder nur die offenen Ziele
-function X:GegenstandTooltip(tooltip, name)
+function X:GegenstandTooltip(tooltip, name, link)
   if QK.db.questGegenstaende and QK.Gegenstaende then
-    QK:Sicher("Tooltip", QK.Gegenstaende.Tooltip, QK.Gegenstaende, tooltip, name)
+    QK:Sicher("Tooltip", QK.Gegenstaende.Tooltip, QK.Gegenstaende, tooltip, name, link)
   else
     QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, name)
   end
@@ -111,19 +111,19 @@ local function TooltipsVerbinden()
     end)
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
       if tooltip ~= GameTooltip and tooltip ~= ItemRefTooltip then return end
-      local name = tooltip.GetItem and tooltip:GetItem()
-      X:GegenstandTooltip(tooltip, name)
+      if not tooltip.GetItem then return end
+      X:GegenstandTooltip(tooltip, tooltip:GetItem())
     end)
   elseif GameTooltip and GameTooltip.HookScript then
     GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
       QK:Sicher("Tooltip", X.TooltipErgaenzen, X, tooltip, (tooltip:GetUnit()))
     end)
     GameTooltip:HookScript("OnTooltipSetItem", function(tooltip)
-      X:GegenstandTooltip(tooltip, (tooltip:GetItem()))
+      X:GegenstandTooltip(tooltip, tooltip:GetItem())
     end)
     if ItemRefTooltip and ItemRefTooltip.HookScript then
       ItemRefTooltip:HookScript("OnTooltipSetItem", function(tooltip)
-        X:GegenstandTooltip(tooltip, (tooltip:GetItem()))
+        X:GegenstandTooltip(tooltip, tooltip:GetItem())
       end)
     end
   end
@@ -206,7 +206,7 @@ function X:Import(text)
 end
 
 local teilenFenster
-function X:TeilenZeigen(mitText)
+function X:TeilenZeigen(mitText, eigenerText, eigenerTitel)
   if not teilenFenster then
     local f = CreateFrame("Frame", "QuestkompassTeilen", UIParent, BackdropTemplateMixin and "BackdropTemplate")
     f:SetSize(480, 130)
@@ -237,6 +237,7 @@ function X:TeilenZeigen(mitText)
     ok:SetSize(120, 22)
     ok:SetPoint("BOTTOMRIGHT", f, "BOTTOM", -4, 12)
     ok:SetText(L"Übernehmen")
+    f.ok = ok
     ok:SetScript("OnClick", function()
       local geklappt, n = X:Import(e:GetText())
       if geklappt then QK:Meldung(L"%d Einstellungen übernommen.", n); f:Hide()
@@ -250,10 +251,13 @@ function X:TeilenZeigen(mitText)
     teilenFenster = f
   end
   teilenFenster:SetScale(QK:Groesse())
-  teilenFenster.text:SetText(mitText and X:Export() or "")
+  teilenFenster.titel:SetText(eigenerTitel or L"Einstellungen teilen")
+  teilenFenster.hinweis:SetText(eigenerText and L"Text mit Strg+C kopieren." or L"Text mit Strg+C kopieren und weitergeben, oder fremden Text einfügen und übernehmen.")
+  teilenFenster.ok:SetShown(not eigenerText)
+  teilenFenster.text:SetText(eigenerText or (mitText and X:Export()) or "")
   teilenFenster:Show()
   teilenFenster.text:SetFocus()
-  if mitText and teilenFenster.text.HighlightText then teilenFenster.text:HighlightText() end
+  if (mitText or eigenerText) and teilenFenster.text.HighlightText then teilenFenster.text:HighlightText() end
 end
 
 ---------------------------------------------------------------------------

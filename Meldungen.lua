@@ -44,7 +44,11 @@ function M:Zeigen(oben, text)
   QK:Sprechen(oben .. ". " .. text)
 end
 
-local function Klang()
+local function Klang(ziel)
+  if ziel then
+    if QK.db.zielKlang then pcall(PlaySound, (SOUNDKIT and SOUNDKIT.UI_QUEST_ROLLING_FORWARD_01) or 1218) end
+    return
+  end
   if not QK.db.klang then return end
   local id = SOUNDKIT and (SOUNDKIT.IG_QUEST_LIST_COMPLETE or SOUNDKIT.UI_QUEST_ROLLING_FORWARD_01)
   pcall(PlaySound, id or 878)
@@ -79,8 +83,13 @@ local function Pruefen()
             if QK.db.meldungen then
               M:Zeigen(q.titel, HAKEN .. z.text .. ((z.soll and z.soll > 1) and (" " .. z.soll .. "/" .. z.soll) or ""))
             end
+            Klang(true)
             Gruppe((L"%s: %s erledigt"):format(q.titel, z.text))
-          elseif z.ist and alt.ist[i] and z.ist > alt.ist[i] and z.soll then
+          end
+          if z.ist and alt.ist[i] and z.ist > alt.ist[i] and QK.char.zaehler then
+            QK.char.zaehler.ziele = (QK.char.zaehler.ziele or 0) + (z.ist - alt.ist[i])
+          end
+          if not z.fertig and z.ist and alt.ist[i] and z.ist > alt.ist[i] and z.soll then
             Gruppe(("%s: %s %d/%d"):format(q.titel, z.text, z.ist, z.soll))
           end
         end

@@ -48,17 +48,17 @@ function P:Pruefen(unit)
     local z = treffer[1] and treffer[1][2]
     if not z then return nil end
     local stand = (z.ist and z.soll) and ("%d/%d"):format(z.ist, z.soll) or ""
-    return (SYMBOL[z.art] and z.art or "monster"), stand
+    return (SYMBOL[z.art] and z.art or "monster"), stand, treffer[1][1].id
   end
   -- 1. Name steht in einem offenen Ziel („Bergpuma getötet“, „Bergpumapelz“)
   if name and QK.Extras then
-    local art, stand = auswerten(QK.Extras:ZieleFuer(name))
-    if art then return art, stand end
+    local art, stand, id = auswerten(QK.Extras:ZieleFuer(name))
+    if art then return art, stand, id end
   end
   -- 2. Das Spiel nennt im Tooltip ein offenes Ziel
   for _, t in ipairs(TooltipZiele(unit)) do
-    local art, stand = auswerten(QK.Extras:ZieleFuer(QK.Compat.ZielName(t)))
-    if art then return art, stand end
+    local art, stand, id = auswerten(QK.Extras:ZieleFuer(QK.Compat.ZielName(t)))
+    if art then return art, stand, id end
     local ist, soll = t:match("(%d+)%s*/%s*(%d+)")
     return "monster", ist and (ist .. "/" .. soll) or ""
   end
@@ -75,6 +75,10 @@ local function Marke(plakette)
   if m then return m end
   m = CreateFrame("Frame", nil, plakette)
   m:SetSize(20, 20)
+  m.ring = m:CreateTexture(nil, "BACKGROUND")
+  m.ring:SetPoint("TOPLEFT", -3, 3)
+  m.ring:SetPoint("BOTTOMRIGHT", 3, -3)
+  m.ring:SetColorTexture(0, 0, 0, 0.8)
   m.bild = m:CreateTexture(nil, "OVERLAY")
   m.bild:SetAllPoints()
   m.stand = m:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -83,7 +87,20 @@ local function Marke(plakette)
   return m
 end
 
-function P:Zeigen(unit)
+local GROESSE = { klein = 14, normal = 20, gross = 28 }
+
+-- Sichtbare Quest-Gegner: { { unit, name, stand } }
+function P:Sichtbare()
+  local liste = {}
+  for unit in pairs(einheiten) do
+    local art, stand = P:Pruefen(unit)
+    if art then liste[#liste + 1] = { unit = unit, name = Text(UnitName(unit)) or "?", stand = stand or "" } end
+  end
+  table.sort(liste, function(a, b) return a.unit < b.unit end)
+  return liste
+end
+
+function P:Zeigen(unit, neu)
   local plakette = C_NamePlate and C_NamePlate.GetNamePlateForUnit and C_NamePlate.GetNamePlateForUnit(unit)
   if not plakette then return end
   local art, stand
@@ -94,7 +111,7 @@ function P:Zeigen(unit)
     return
   end
   m = Marke(plakette)
-  local groesse = 20 * QK:Groesse()
+  local groesse = (GROESSE[QK.db.plakettenGroesse] or 20) * QK:Groesse()
   m:SetSize(groesse, groesse)
   m:ClearAllPoints()
   local uf = plakette.UnitFrame
@@ -104,7 +121,10 @@ function P:Zeigen(unit)
   m.bild:SetTexture(SYMBOL[art])
   if art ~= "monster" then m.bild:SetTexCoord(0.08, 0.92, 0.08, 0.92) else m.bild:SetTexCoord(0, 1, 0, 1) end
   m.stand:SetText(stand or "")
+  if QK.db.kontrast then m.ring:Show() else m.ring:Hide() end
+  if QK.db.kontrast then m.stand:SetTextColor(1, 1, 1) else m.stand:SetTextColor(unpack(QK.farben.gold)) end
   m:Show()
+  if neu and QK.Unterwegs then QK.Unterwegs:NeuerGegner(Text(UnitName(unit)), stand) end
 end
 
 function P:AlleAktualisieren()
@@ -116,7 +136,7 @@ function P:Anwenden() P:AlleAktualisieren() end
 function P:Start()
   QK:Ereignis("NAME_PLATE_UNIT_ADDED", function(unit)
     einheiten[unit] = true
-    QK:Sicher("Plaketten", P.Zeigen, P, unit)
+    QK:Sicher("Plaketten", P.Zeigen, P, unit, true)
   end)
   QK:Ereignis("NAME_PLATE_UNIT_REMOVED", function(unit)
     einheiten[unit] = nil
@@ -131,3 +151,11 @@ function P:Start()
   end
   QK:Ereignis("QUEST_LOG_UPDATE", spaeter)
 end
+
+QK:Befehl({ "plaketten", "nameplates" }, function(rest)
+  local g = ({ klein = "klein", small = "klein", normal = "normal", gross = "gross", ["groß"] = "gross", large = "gross" })[rest]
+  if not g then QK:Meldung(L"Beispiel: /qk plaketten klein | normal | gross") return end
+  QK.db.plakettenGroesse = g
+  P:AlleAktualisieren()
+  QK:Meldung(L"Symbol an Quest-Gegnern: %s", g)
+end, L"/qk plaketten klein | normal | gross – Größe des Symbols an Quest-Gegnern")

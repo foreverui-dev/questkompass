@@ -2,6 +2,52 @@
 
 ## 1.1.0
 
+30 weitere Funktionen und Verbesserungen:
+
+Quest-Gegner
+1. Anvisierte Quest-Gegner markieren ihre Quest in der Liste („anvisiert“)
+2. Hinweiston, wenn ein Quest-Gegner auftaucht, mit Vorlesen (optional)
+3. `/qk gegner` und Tastenkürzel: sagt alle Quest-Gegner in der Nähe mit Stand an
+4. Symbol an der Namensplakette in drei Größen (`/qk plaketten klein | normal | gross`)
+5. Bei hohem Kontrast bekommt das Symbol einen dunklen Hintergrund und weißen Stand
+
+Questgegenstände
+6. Tooltip zeigt, wie viele du hast, auch mit Bank
+7. Verkaufswarnung: Questgegenstand beim Händler verkauft? Hinweis mit Rückkauf
+8. Händler-Hinweis: der Händler verkauft etwas, das deine Quests brauchen
+9. Bank-Hinweis: was deine anderen Charaktere gerade sammeln
+10. Beute-Hinweis: erbeuteter Gegenstand wird von einem Twink oder für eine spätere Quest gebraucht
+
+Liste
+11. Questtext (Auftrag) im Tooltip der Liste
+12. Schwierigkeit als Wort: leicht, passend, schwer, sehr schwer
+13. Ton bei jedem fertigen Ziel (optional)
+14. Stufenprognose: „Stufe 23 in etwa 40 Min.“ im Tooltip der Erfahrungszeile
+15. Wöchentliche Quests mit Countdown bis zum Wochenreset
+
+Navigation
+16. Leichen-Pfeil: nach dem Freilassen führt der Fokuspfeil zum Leichnam, danach ist der alte Wegpunkt wieder da
+17. `/qk pos`: eigene Position anzeigen und in den Chat legen
+18. `/qk weg teilen`: Wegpunkt an die Gruppe schicken, Mitspieler mit Questkompass können ihn übernehmen
+19. Route: geschätzte Restzeit unter dem Fokuspfeil
+20. Fokus springt weiter: ist die Fokus-Quest fertig, rückt die nächstgelegene nach (optional)
+
+Questbuch und Statistik
+21. `/qk sitzung`: Sitzungsbericht mit Dauer, Quests, EP pro Stunde, Gold und Prognose
+22. `/qk tagebuchtext`: die letzten 50 Tagebucheinträge zum Kopieren
+23. Suche findet Quests im Log auch über ihre Ziele und deine Notizen
+24. Fünf neue Meilensteine: Zielstrebig, Unermüdlich, Nachteule, Frühaufsteher, Zurück ins Leben
+25. Sitzung und Prognose im Tooltip von Listenkopf und Minimap-Knopf
+
+Komfort und Barrierefreiheit
+26. Von Gruppenmitgliedern geteilte Quests automatisch annehmen (optional, Umschalt hält an)
+27. Gruppenquest-Warnung beim Lesen: „empfohlen für 3 Spieler“
+28. Questdialog vorlesen (Titel, Auftrag, Gruppengröße), wenn Vorlesen an ist
+29. Belohnungswahl vorlesen
+30. Neue Assistent-Seite „Unterwegs“ für alle neuen Schalter und drei neue Tastenkürzel (Quest-Gegner ansagen, Position, Sitzungsbericht)
+
+Außerdem:
+
 - Questgegenstände: Im Tooltip eines Gegenstands steht, für welche Quests er noch gebraucht wird
   - eigene Quests im Log mit Stand, bei fertigem Ziel der Hinweis „bis zur Abgabe behalten“
   - Quests deiner anderen Charaktere (praktisch an der Bank)

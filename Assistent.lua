@@ -359,6 +359,24 @@ local function SeitenBauen()
     tipp:SetPoint("TOPLEFT", 0, -248)
   end)
 
+  NeueSeite(L"Unterwegs", function(s, merke)
+    Raster(s, merke, {
+      { L"Leichen-Pfeil", L"Nach dem Tod führt der Pfeil zum Leichnam.", "leichenPfeil" },
+      { L"Fokus springt weiter", L"Fertige Fokus-Quest: nächste rückt nach.", "fokusWeiter" },
+      { L"Anvisierte Gegner", L"Ihre Quest wird in der Liste markiert.", "zielHervorheben" },
+      { L"Ton bei Quest-Gegnern", L"Kurzer Hinweis, wenn einer auftaucht.", "questGegnerTon" },
+      { L"Questtext im Tooltip", L"Auftrag und Schwierigkeit in der Liste.", "questText" },
+      { L"Ton bei jedem Ziel", L"Nicht nur, wenn die Quest fertig ist.", "zielKlang" },
+      { L"Verkaufswarnung", L"Questgegenstand verkauft? Hinweis mit Rückkauf.", "verkaufsWarnung" },
+      { L"Händler-Hinweis", L"Händler verkauft etwas für deine Quests.", "haendlerHinweis" },
+      { L"Bank-Hinweis", L"Was deine Twinks noch sammeln.", "bankHinweis" },
+      { L"Sitzung und Prognose", L"EP pro Stunde und nächste Stufe im Tooltip.", "prognose" },
+      { L"Geteilte Quests annehmen", L"Von Gruppenmitgliedern, Umschalt hält an.", "geteiltAnnehmen" },
+      { L"Gruppenquest-Warnung", L"Hinweis beim Lesen einer Gruppenquest.", "gruppenWarnung" },
+      { L"Dialoge vorlesen", L"Questtext und Belohnungen, wenn Vorlesen an ist.", "dialogVorlesen" },
+    }, 0, 40)
+  end)
+
   NeueSeite(L"Profil und Tasten", function(s, merke)
     local profile = {
       { "konto", L"Für alle Charaktere", L"Eine Einstellung für deinen ganzen Account." },

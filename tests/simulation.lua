@@ -241,7 +241,7 @@ local function Durchlauf(modern)
   pruefe(QK.Compat.modern == modern, "richtige Quest-API erkannt")
   pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent öffnet beim ersten Start")
   pruefe(enthaelt("Willkommen") and enthaelt("Los geht’s"), "Willkommensseite")
-  for i = 1, 11 do
+  for i = 1, 12 do
     alleTexte = {}
     QK.Assistent:Oeffnen(i)
   end
@@ -704,6 +704,136 @@ local function Durchlauf(modern)
     feuern("NAME_PLATE_UNIT_REMOVED", "nameplate1")
     feuern("NAME_PLATE_UNIT_REMOVED", "nameplate2")
     UnitName, C_NamePlate, C_TooltipInfo = echterName, nil, nil
+  end
+  -- 1.1: unterwegs
+  do
+    local U, P = QK.Unterwegs, QK.Plaketten
+    local chat = {}
+    local echterChat = DEFAULT_CHAT_FRAME.AddMessage
+    DEFAULT_CHAT_FRAME.AddMessage = function(_, t) chat[#chat + 1] = t end
+    local function imChat(muster)
+      for _, t in ipairs(chat) do if t:find(muster, 1, true) then return true end end
+      return false
+    end
+    local plaketten = {}
+    C_NamePlate = { GetNamePlateForUnit = function(u) plaketten[u] = plaketten[u] or NeuesObjekt("Frame"); return plaketten[u] end }
+    local echterName = UnitName
+    local gegner = modern and "Bergpuma" or "Hogger"
+    UnitName = function(u) if u == "nameplate1" or u == "target" then return gegner end return echterName(u) end
+    local questID = modern and 750 or 176
+    -- Quest-Gegner: Quest bekannt, anvisieren, Ton, Ansage
+    local _, _, id = P:Pruefen("nameplate1")
+    pruefe(id == questID, "Quest-Gegner kennt seine Quest: " .. tostring(id))
+    UnitExists = function(u) return u == "target" end
+    feuern("PLAYER_TARGET_CHANGED")
+    alleTexte = {}
+    QK.Tracker:Aktualisieren()
+    pruefe(U.zielQuest == questID and enthaelt("anvisiert"), "anvisierter Gegner markiert seine Quest")
+    UnitExists = function() return false end
+    feuern("PLAYER_TARGET_CHANGED")
+    pruefe(U.zielQuest == nil, "Markierung verschwindet ohne Ziel")
+    local toene = 0
+    local echterTon = PlaySound
+    PlaySound = function() toene = toene + 1 end
+    QK.db.questGegnerTon = true
+    feuern("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    feuern("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    pruefe(toene == 1, "Hinweiston bei Quest-Gegner, nicht doppelt: " .. toene)
+    QK.db.questGegnerTon = false
+    PlaySound = echterTon
+    SlashCmdList.QUESTKOMPASS("gegner")
+    pruefe(imChat("1 Quest-Gegner in der Nähe: " .. gegner), "Quest-Gegner ansagen")
+    SlashCmdList.QUESTKOMPASS("plaketten gross")
+    pruefe(QK.db.plakettenGroesse == "gross", "Symbolgröße einstellbar")
+    QK.db.plakettenGroesse = "normal"
+    feuern("NAME_PLATE_UNIT_REMOVED", "nameplate1")
+    -- Besitz im Tooltip
+    GetItemCount = function(_, bank) return bank and 5 or 3 end
+    local tg = { zeilen = {}, AddLine = function(self, t) self.zeilen[#self.zeilen + 1] = t end, Show = function() end }
+    local item = modern and "Bergpumapelz" or "Flusspfotenhalstuch"
+    X:GegenstandTooltip(tg, item, "|Hitem:1|h[" .. item .. "]|h")
+    pruefe(tg.zeilen[#tg.zeilen] == "Im Besitz: 3 (mit Bank 5)", "Besitz im Tooltip: " .. tostring(tg.zeilen[#tg.zeilen]))
+    -- Verkauf, Händler, Bank, Beute
+    QK.root.questGegenstaende["leinenstoff"] = { n = "Leinenstoff", q = { [99999] = 6 } }
+    QK.root.charaktere["Anna-Testrealm"] = { name = "Anna", erledigt = {}, brauche = { leinenstoff = { { 123, "x", 2, 5, false } } } }
+    local rueck = { "Wolfszahn" }
+    GetNumBuybackItems = function() return #rueck end
+    GetBuybackItemInfo = function(i) return rueck[i] end
+    GetMerchantNumItems = function() return 2 end
+    GetMerchantItemInfo = function(i) return i == 1 and "Brot" or "Leinenstoff" end
+    feuern("MERCHANT_SHOW")
+    pruefe(imChat("Dieser Händler verkauft Leinenstoff"), "Händler-Hinweis")
+    rueck[2] = item
+    feuern("MERCHANT_UPDATE")
+    pruefe(imChat(item .. " wird noch gebraucht"), "Verkaufswarnung mit Rückkauf-Hinweis")
+    feuern("BANKFRAME_OPENED")
+    pruefe(imChat("Deine anderen Charaktere sammeln: Leinenstoff (Anna 2/5)"), "Bank-Hinweis für Twinks")
+    LOOT_ITEM_SELF = "Ihr bekommt Beute: %s."
+    feuern("CHAT_MSG_LOOT", "Ihr bekommt Beute: |cffffffff|Hitem:2589|h[Leinenstoff]|h|r.")
+    pruefe(imChat("Leinenstoff gut aufheben"), "Beute-Hinweis für spätere Quests")
+    QK.root.charaktere["Anna-Testrealm"], QK.root.questGegenstaende["leinenstoff"] = nil, nil
+    -- Liste: Schwierigkeit und Questtext
+    GetQuestLogQuestText = function() return "Beschreibung", "Bringt 10 Pelze zu Jäger Ragetotem." end
+    if modern then
+      C_QuestLog.GetSelectedQuest = function() return 0 end
+      C_QuestLog.SetSelectedQuest = function() end
+    else
+      GetQuestLogSelection = function() return 0 end
+      SelectQuestLogEntry = function() end
+    end
+    local q1 = QK.Compat:Questlog()[1]
+    pruefe(U:QuestText(q1) == "Bringt 10 Pelze zu Jäger Ragetotem.", "Questtext für den Listen-Tooltip")
+    pruefe(U:Schwierigkeit({ stufe = (UnitLevel("player") or 1) + 6 }) == "sehr schwer" and U:Schwierigkeit({ grau = true }):find("leicht", 1, true), "Schwierigkeit als Wort")
+    -- Leichen-Pfeil
+    C_DeathInfo = { GetCorpseMapPosition = function() return { GetXY = function() return 0.3, 0.4 end } end }
+    local echterMap = C_Map
+    C_Map = C_Map or {}
+    C_Map.GetBestMapForUnit = C_Map.GetBestMapForUnit or function() return 1429 end
+    QK.char.wegpunkt = { karte = 1, x = 0.1, y = 0.1, name = "Alt" }
+    UnitIsGhost = function() return true end
+    feuern("PLAYER_ALIVE")
+    pruefe(QK.char.wegpunkt and QK.char.wegpunkt.leiche and QK.char.wegpunkt.x == 0.3, "Leichen-Pfeil nach dem Freilassen")
+    feuern("PLAYER_UNGHOST")
+    pruefe(QK.char.wegpunkt and QK.char.wegpunkt.name == "Alt" and QK.char.zaehler.leiche == 1, "alter Wegpunkt nach der Wiederbelebung zurück")
+    QK.char.wegpunkt, C_Map, UnitIsGhost = nil, echterMap, function() return false end
+    -- Wegpunkt aus der Gruppe
+    U:WegpunktEmpfangen("Kumpel", "1429;0.4550;0.6000;Brunnen")
+    pruefe(popups[#popups].name == "QUESTKOMPASS_WEGPUNKT", "Wegpunkt-Angebot aus der Gruppe")
+    U:AngebotAnnehmen()
+    pruefe(QK.char.wegpunkt and QK.char.wegpunkt.name == "Brunnen", "Wegpunkt aus der Gruppe übernommen")
+    QK.char.wegpunkt = nil
+    -- Position, Sitzung, Tagebuchtext
+    if modern then
+      SlashCmdList.QUESTKOMPASS("pos")
+      pruefe(imChat("Du bist hier:"), "eigene Position")
+    end
+    pruefe(#U:SitzungZeilen() >= 3, "Sitzungsbericht hat Zeilen")
+    SlashCmdList.QUESTKOMPASS("sitzung")
+    SlashCmdList.QUESTKOMPASS("tagebuchtext")
+    pruefe(QuestkompassTeilen.gezeigt and QuestkompassTeilen.ok.gezeigt == false, "Tagebuch als Text ohne Übernehmen-Knopf")
+    -- Questdialog
+    GetSuggestedGroupNum = function() return 3 end
+    alleTexte = {}
+    feuern("QUEST_DETAIL")
+    pruefe(enthaelt("GRUPPENQUEST"), "Gruppenquest-Warnung")
+    GetSuggestedGroupNum = function() return 0 end
+    QK.db.geteiltAnnehmen, angenommen = true, false
+    UnitIsPlayer = function(u) return u == "npc" end
+    UnitInParty = function(u) return u == "npc" end
+    feuern("QUEST_DETAIL")
+    pruefe(angenommen, "geteilte Quest angenommen")
+    QK.db.geteiltAnnehmen, UnitIsPlayer, UnitInParty = false, function() return false end, function() return false end
+    -- Meilensteine und Suche
+    QK.char.zaehler.ziele = 100
+    QK.Erfolge:Pruefen(true)
+    pruefe(QK.char.erfolge["ziele100"] ~= nil and QK.char.erfolge["leiche1"] ~= nil, "neue Meilensteine")
+    if modern then
+      local found = false
+      for _, q in ipairs(QK.Gebiet:Suchen("pumapelz")) do if q.id == 750 then found = true end end
+      pruefe(found, "Suche findet Quests über ihre Ziele")
+    end
+    UnitName, C_NamePlate = echterName, nil
+    DEFAULT_CHAT_FRAME.AddMessage = echterChat
   end
   alleTexte = {}
   local rat = QK.Navigation:WasJetzt()

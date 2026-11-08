@@ -206,6 +206,7 @@ local function ZeileTooltip(self)
     GameTooltip:AddDoubleLine(L"Auch dabei", table.concat(q.mitspieler, ", "), 0.6, 0.6, 0.6, 0.5, 0.75, 1)
   end
   QK.Tooltip:Ergaenzen(GameTooltip, q.id, true)
+  QK:Rufe("listentipp", GameTooltip, q)
   GameTooltip:AddLine(" ")
   GameTooltip:AddLine(L"Klick: Fokus mit Navigationspfeil", 0.6, 0.6, 0.6)
   GameTooltip:AddLine(L"Strg+Klick: im Questlog öffnen", 0.6, 0.6, 0.6)
@@ -429,6 +430,8 @@ local function EPVorschau(quests, y)
   if summe > 0 then
     z.tipp = z.tipp .. "\n" .. (L"Aktuell: %s von %s EP."):format(BreakUpLargeNumbers and BreakUpLargeNumbers(ist) or ist, BreakUpLargeNumbers and BreakUpLargeNumbers(max) or max)
     h = h + Balken(z, ist + summe, max, { 0.55, 0.45, 0.9 })
+    local stufe, sek = QK.Unterwegs and QK.db.prognose and QK.Unterwegs:Prognose()
+    if stufe then z.tipp = z.tipp .. "\n" .. (L"Stufe %d in etwa %s (nach deinem Tempo dieser Sitzung)."):format(stufe, QK:DauerText(sek)) end
   end
   return y - h - 4
 end
@@ -445,8 +448,33 @@ function QK:BisZuruecksetzen()
   end
 end
 
+function QK:BisWochenreset()
+  if C_DateAndTime and C_DateAndTime.GetSecondsUntilWeeklyReset then
+    local ok, s = pcall(C_DateAndTime.GetSecondsUntilWeeklyReset)
+    if ok then return QK.Zahl(s) end
+  end
+end
+
+local function Woechentlich(quests, y)
+  local offen, fertig = 0, 0
+  for _, q in ipairs(quests) do
+    if q.haeufigkeit == WOECHENTLICH then
+      if q.fertig then fertig = fertig + 1 else offen = offen + 1 end
+    end
+  end
+  if offen + fertig == 0 then return y end
+  local text = (L"Wöchentliche: %d offen, %d fertig"):format(offen, fertig)
+  local rest = QK:BisWochenreset()
+  if rest then text = text .. " · " .. (L"neu in %s"):format(QK:DauerText(rest)) end
+  local z, h = Zeile("ep", text, QK.farben.hell, nil, y)
+  z.tipp = L"Wöchentliche Quests im Log. Nach dem Wochenreset lassen sie sich erneut annehmen."
+  z.titelTipp = L"Wöchentliche Quests"
+  return y - h - 4
+end
+
 local function Taeglich(quests, y)
   if not QK.db.taeglichZeile or not TAEGLICH then return y end
+  if WOECHENTLICH then y = Woechentlich(quests, y) end
   local offen, fertig = 0, 0
   for _, q in ipairs(quests) do
     if q.haeufigkeit == TAEGLICH then
@@ -880,6 +908,7 @@ function T:Start()
     if not QK.db.gesperrt then GameTooltip:AddLine(L"Ziehen: verschieben", 0.8, 0.8, 0.8) end
     GameTooltip:AddLine(L"Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
     GameTooltip:AddLine(L"Mausrad über der Liste: blättern", 0.6, 0.6, 0.6)
+    if QK.Unterwegs then QK.Unterwegs:TooltipSitzung(GameTooltip) end
     GameTooltip:Show()
   end)
   kopf:SetScript("OnLeave", function() GameTooltip:Hide() end)

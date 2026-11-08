@@ -32,4 +32,13 @@
   <Binding name="QUESTKOMPASS_VORLESEN" category="ADDONS">
     Questkompass:Taste("vorlesen")
   </Binding>
+  <Binding name="QUESTKOMPASS_GEGNER" category="ADDONS">
+    Questkompass:Taste("gegner")
+  </Binding>
+  <Binding name="QUESTKOMPASS_POSITION" category="ADDONS">
+    Questkompass:Taste("position")
+  </Binding>
+  <Binding name="QUESTKOMPASS_SITZUNG" category="ADDONS">
+    Questkompass:Taste("sitzung")
+  </Binding>
 </Bindings>

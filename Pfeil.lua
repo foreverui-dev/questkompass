@@ -118,7 +118,11 @@ function P:Drehen()
     local rest, offen, gesamt = QK.Navigation:Restweg()
     local nr = gesamt - offen + 1
     local text = (L"Station %d von %d"):format(nr, gesamt)
-    if rest and rest > 0 then text = text .. " · " .. (L"Route noch %s"):format(QK:EntfernungText(rest)) end
+    if rest and rest > 0 then
+      text = text .. " · " .. (L"Route noch %s"):format(QK:EntfernungText(rest))
+      local tempo = QK.Zahl(GetUnitSpeed and GetUnitSpeed("player"))
+      if tempo and tempo > 0 then text = text .. " (" .. (L"etwa %s"):format(QK:DauerText(rest / tempo)) .. ")" end
+    end
     unten:SetText(text)
   elseif wp and QK.char.wegkette and #QK.char.wegkette > 0 then
     unten:SetText((L"danach noch %d Wegpunkte"):format(#QK.char.wegkette))

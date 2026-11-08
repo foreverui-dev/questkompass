@@ -62,6 +62,10 @@ local function Empfangen(praefix, text, kanal, absender)
   local name = Ambiguate and Ambiguate(absender, "short") or absender:match("^[^-]+")
   if name == UnitName("player") then return end
   local art = text:sub(1, 1)
+  if art == "W" then
+    if QK.Unterwegs then QK.Unterwegs:WegpunktEmpfangen(name, text:sub(2)) end
+    return
+  end
   if art == "?" then GR:Verschicken(true) return end
   if art == "S" then fortschritt[name] = {} end
   local t = fortschritt[name] or {}
@@ -117,6 +121,9 @@ function GR:Suchen(q)
   local text = (kanal > 0 and ("/" .. kanal .. " ") or "/1 ") .. GR:SuchText(q)
   if ChatFrame_OpenChat then ChatFrame_OpenChat(text) end
 end
+
+GR.Senden = function(text) Senden(text) end
+function GR:InGruppe() return InGruppe() end
 
 function GR:Start()
   if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then

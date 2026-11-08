@@ -114,6 +114,24 @@ function G:Suchen(text)
       end
     end
   end
+  -- auch Questziele und eigene Notizen der Quests im Log durchsuchen
+  local schon = {}
+  for _, q in ipairs(treffer) do schon[q.id] = true end
+  for _, l in ipairs(QK.Compat:Questlog()) do
+    if not schon[l.id] then
+      local passt = ((QK.char.notizen[l.id] or ""):lower():find(text, 1, true)) ~= nil
+      for _, z in ipairs(l.ziele or {}) do
+        if (z.text or ""):lower():find(text, 1, true) then passt = true end
+      end
+      if passt then
+        local q = QK:Quest(l.id) or { id = l.id }
+        q.name = q.name or l.titel
+        q.status = 1
+        treffer[#treffer + 1] = q
+        schon[l.id] = true
+      end
+    end
+  end
   table.sort(treffer, function(a, b) return (a.name or "") < (b.name or "") end)
   while #treffer > 150 do table.remove(treffer) end
   return treffer

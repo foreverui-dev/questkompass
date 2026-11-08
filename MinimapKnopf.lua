@@ -62,6 +62,7 @@ function MK:Start()
     GameTooltip:AddLine(L"Umschalt+Klick: Questbuch", 0.8, 0.8, 0.8)
     GameTooltip:AddLine(L"Rechtsklick: Einstellungen", 0.8, 0.8, 0.8)
     GameTooltip:AddLine(L"Ziehen: Knopf verschieben", 0.6, 0.6, 0.6)
+    if QK.Unterwegs then QK.Unterwegs:TooltipSitzung(GameTooltip) end
     GameTooltip:Show()
   end)
   knopf:SetScript("OnLeave", function() GameTooltip:Hide() end)

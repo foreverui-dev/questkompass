@@ -98,11 +98,28 @@ function GG:Zeilen(name)
   return zeilen
 end
 
-function GG:Tooltip(tooltip, name)
+-- Wie viele du davon hast: Taschen, mit Bank
+function GG:Besitz(link)
+  local f = GetItemCount or (C_Item and C_Item.GetItemCount)
+  if not f or not link then return nil end
+  local ok, taschen = pcall(f, link)
+  local ok2, gesamt = pcall(f, link, true)
+  taschen = ok and QK.Zahl(taschen) or nil
+  gesamt = ok2 and QK.Zahl(gesamt) or taschen
+  return taschen, gesamt
+end
+
+function GG:Tooltip(tooltip, name, link)
   local zeilen = GG:Zeilen(name)
   if #zeilen == 0 then return end
   tooltip:AddLine(L"Für Quests gebraucht:", 0.6, 0.6, 0.6)
   for _, z in ipairs(zeilen) do tooltip:AddLine(z[1], z[2], z[3], z[4]) end
+  local taschen, gesamt = GG:Besitz(link)
+  if taschen then
+    local text = (L"Im Besitz: %d"):format(taschen)
+    if gesamt and gesamt > taschen then text = text .. " " .. (L"(mit Bank %d)"):format(gesamt) end
+    tooltip:AddLine(text, 0.8, 0.8, 0.8)
+  end
   tooltip:Show()
 end
 

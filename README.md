@@ -14,6 +14,7 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 - **Questziele in Tooltips** von Gegnern und Gegenständen.
 - **Questgegenstände:** Am Gegenstand steht, für welche Quests er noch gebraucht wird, auch bei deinen anderen Charakteren (`/qk gegenstaende`).
 - **Symbol an Quest-Gegnern:** Totenkopf oder Beutel mit Stand an der Namensplakette von Gegnern in der Nähe, die eine Quest braucht.
+- **Unterwegs:** Leichen-Pfeil, Position und Wegpunkte mit der Gruppe teilen, Händler-, Bank-, Beute- und Verkaufshinweise für Questgegenstände, Sitzungsbericht mit Stufenprognose (`/qk sitzung`), Quest-Gegner ansagen (`/qk gegner`).
 - **Route und Wegpunkte:** kürzeste Route durch alle Quests der Karte, eigene Wegpunkte und Wegpunkt-Ketten per Befehl oder Alt+Klick auf die Weltkarte, Pfeil am Minikartenrand, Abgabe-Erinnerung.
 - **Gemeinschaft:** Twink-Hilfe (was andere Charaktere schon erledigt haben), Gruppen-Abgleich („Kumpel 3/8“), fertige Suchnachricht für Gruppenquests, Notizen je Quest.
 - **Kleine Helfer:** Meldung und Klang bei Fortschritt, Fortschritt an die Gruppe, Warnung bei vollem Questlog, automatisch annehmen und abgeben (Umschalt hält an), Belohnungstipp, Knopf an der Minikarte.
