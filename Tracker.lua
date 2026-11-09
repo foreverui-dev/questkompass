@@ -430,7 +430,8 @@ local function EPVorschau(quests, y)
   if summe > 0 then
     z.tipp = z.tipp .. "\n" .. (L"Aktuell: %s von %s EP."):format(BreakUpLargeNumbers and BreakUpLargeNumbers(ist) or ist, BreakUpLargeNumbers and BreakUpLargeNumbers(max) or max)
     h = h + Balken(z, ist + summe, max, { 0.55, 0.45, 0.9 })
-    local stufe, sek = QK.Unterwegs and QK.db.prognose and QK.Unterwegs:Prognose()
+    local stufe, sek
+    if QK.Unterwegs and QK.db.prognose then stufe, sek = QK.Unterwegs:Prognose() end
     if stufe then z.tipp = z.tipp .. "\n" .. (L"Stufe %d in etwa %s (nach deinem Tempo dieser Sitzung)."):format(stufe, QK:DauerText(sek)) end
   end
   return y - h - 4

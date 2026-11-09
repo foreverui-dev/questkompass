@@ -20,8 +20,9 @@ local function Groesse(mapID)
     local ok2, _, p2 = pcall(C_Map.GetWorldPosFromMapPos, mapID, CreateVector2D(0, 1))
     if ok and ok1 and ok2 and p0 and p1 and p2 then
       local function abstand(a, b)
-        local ax, ay = a:GetXY()
-        local bx, by = b:GetXY()
+        local ax, ay = QK.XY(a)
+        local bx, by = QK.XY(b)
+        if not ax or not bx then return 0 end
         return math.sqrt((ax - bx) ^ 2 + (ay - by) ^ 2)
       end
       local b, h = abstand(p0, p1), abstand(p0, p2)
@@ -58,8 +59,7 @@ function K:RichtungZuPunkt(x, y)
   if not karte or not x then return nil end
   local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(karte, "player")
   if not pos then return nil end
-  local px, py = pos:GetXY()
-  px, py = QK.Zahl(px), QK.Zahl(py)
+  local px, py = QK.XY(pos)
   if not px or not py or (px == 0 and py == 0) then return nil end
   local g = Groesse(karte)
   local b, h = g and g[1] or 1000, g and g[2] or 667
@@ -94,7 +94,7 @@ function K:Umrechnen(vonKarte, x, y)
   if not ok or not kontinent or not welt then return nil end
   local ok2, _, pos = pcall(C_Map.GetMapPosFromWorldPos, kontinent, welt, karte)
   if not ok2 or not pos then return nil end
-  local nx, ny = pos:GetXY()
+  local nx, ny = QK.XY(pos)
   if nx and nx >= -1 and nx <= 2 and ny >= -1 and ny <= 2 then return nx, ny end
 end
 
@@ -102,8 +102,7 @@ function K:Spieler()
   if not karte then return nil end
   local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(karte, "player")
   if pos then
-    local x, y = pos:GetXY()
-    x, y = QK.Zahl(x), QK.Zahl(y)
+    local x, y = QK.XY(pos)
     if x and y then return x, y end
   end
 end

@@ -242,8 +242,9 @@ end
 local function SpielWegpunkt()
   if N.eigenerPunkt or not (C_Map and C_Map.GetUserWaypoint) then return end
   local ok, punkt = pcall(C_Map.GetUserWaypoint)
-  if ok and punkt and punkt.uiMapID and punkt.position then
-    local x, y = punkt.position:GetXY()
+  local x, y
+  if ok and punkt and punkt.uiMapID then x, y = QK.XY(punkt.position) end
+  if x and y then
     local w = N:Wegpunkt()
     if not w or w.karte ~= punkt.uiMapID or math.abs(w.x - x) > 0.001 or math.abs(w.y - y) > 0.001 then
       QK.char.wegpunkt = { karte = punkt.uiMapID, x = x, y = y, name = L"Kartenpunkt" }

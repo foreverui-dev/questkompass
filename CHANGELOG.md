@@ -62,6 +62,8 @@ Behoben:
 - Fehlermeldungen von Fokuspfeil und Zielliste („secret number value“): Laufgeschwindigkeit, Position und Blickrichtung, die das Spiel geschützt liefert, werden jetzt übersprungen statt verglichen
 - Belohnungs-Markierung und Belohnungs-Vergleich liefen ins Leere, weil der Client GetItemInfo nur noch unter C_Item anbietet
 - Fehler „secret string value“ in Tooltips (Extras.lua): geschützte Namen von Gegnern und Gegenständen werden jetzt übersprungen
+- Fehler in der Zielliste bei der Stufenprognose (Tracker.lua, „sek“ ohne Wert)
+- Fehler beim Übernehmen von Kartenpunkten (Navigation.lua, USER_WAYPOINT_UPDATED): WoW Forever liefert Kartenpunkte ohne GetXY
 
 ## 1.0.0 – erste öffentliche Version
 

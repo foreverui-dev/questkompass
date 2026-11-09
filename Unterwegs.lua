@@ -20,10 +20,9 @@ function U:LeicheSuchen()
   local karte = C_Map.GetBestMapForUnit("player")
   if not karte then return false end
   local ok, pos = pcall(C_DeathInfo.GetCorpseMapPosition, karte)
-  if not ok or not pos or not pos.GetXY then return false end
-  local x, y = pos:GetXY()
-  x, y = QK.Zahl(x), QK.Zahl(y)
-  if not x or not y or (x == 0 and y == 0) then return false end
+  if not ok then return false end
+  local x, y = QK.XY(pos)
+  if not x or (x == 0 and y == 0) then return false end
   local w = QK.char.wegpunkt
   if not (w and w.leiche) then
     QK.char.vorLeiche = { punkt = w, kette = QK.char.wegkette }

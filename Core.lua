@@ -266,18 +266,32 @@ local gemeldet = false
 -- Geschützte Werte: Neuere Clients geben manche Zahlen (Tempo, Position, Blickrichtung) als
 -- „geheime“ Werte zurück, mit denen Addons nicht rechnen oder vergleichen dürfen.
 -- QK.Zahl liefert die Zahl, wenn sie benutzbar ist, sonst nil.
-local function vergleichbar(v) return v < math.huge end
+local function vergleichbar(v) return v == v and v < math.huge end
+local function geheim(v)
+  if issecretvalue then
+    local ok, ja = pcall(issecretvalue, v)
+    if not ok or ja then return true end
+  end
+  return false
+end
 function QK.Zahl(v)
-  if type(v) ~= "number" then return nil end
-  if issecretvalue and issecretvalue(v) then return nil end
+  if type(v) ~= "number" or geheim(v) then return nil end
   if not pcall(vergleichbar, v) then return nil end
   return v
 end
 
+-- Koordinaten aus einem Kartenpunkt: mit GetXY oder als Felder x/y (WoW Forever)
+function QK.XY(pos)
+  if type(pos) ~= "table" then return nil end
+  local x, y
+  if pos.GetXY then x, y = pos:GetXY() else x, y = pos.x, pos.y end
+  x, y = QK.Zahl(x), QK.Zahl(y)
+  if x and y then return x, y end
+end
+
 -- Dasselbe für Texte (z. B. Namen von Einheiten): nil, wenn das Spiel ihn geschützt liefert.
 function QK.Text(v)
-  if type(v) ~= "string" then return nil end
-  if issecretvalue and issecretvalue(v) then return nil end
+  if type(v) ~= "string" or geheim(v) then return nil end
   return v
 end
 

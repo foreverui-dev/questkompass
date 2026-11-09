@@ -582,6 +582,19 @@ local function Durchlauf(modern)
     local tg = { zeilen = {}, AddLine = function(self, t) self.zeilen[#self.zeilen + 1] = t end, Show = function() end }
     QK.Extras:TooltipErgaenzen(tg, "Geheimname")
     QK.Extras:GegenstandTooltip(tg, "Geheimname", "Geheimname")
+    pruefe(QK.XY({ x = 0.25, y = 0.75 }) == 0.25 and select(2, QK.XY({ GetXY = function() return 0.1, 0.2 end })) == 0.2, "Kartenpunkt mit und ohne GetXY")
+    if C_Map then
+      local echt, alterPunkt = C_Map.GetUserWaypoint, QK.char.wegpunkt
+      C_Map.GetUserWaypoint = function() return { uiMapID = 1429, position = { x = 0.4, y = 0.6 } } end
+      feuern("USER_WAYPOINT_UPDATED")
+      pruefe(QK.char.wegpunkt and QK.char.wegpunkt.x == 0.4, "Kartenpunkt ohne GetXY übernommen")
+      QK.char.wegpunkt, C_Map.GetUserWaypoint = alterPunkt, echt
+    end
+    GetMaxLevelForPlayerExpansion = function() return 60 end
+    QK.Gebiet.sitzung.start, QK.Gebiet.sitzung.ep = GetTime() - 3600, 5000
+    local alteFehler = #(QK.root.fehler or {})
+    QK.Tracker:Aktualisieren()
+    pruefe(#(QK.root.fehler or {}) == alteFehler, "Prognose in der Erfahrungszeile ohne Fehler")
     pruefe(QK.Text("Geheimname") == nil and #QK.Extras:ZieleFuer("Geheimname") == 0 and #tg.zeilen == 0, "geschützte Namen werden übersprungen")
     pruefe(#(QK.root.fehler or {}) == fehlerVorher and QuestkompassPfeil.gezeigt, "Pfeil und Liste laufen mit geschütztem Tempo")
     issecretvalue = echterVergleich
