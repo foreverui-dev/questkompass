@@ -595,6 +595,11 @@ local function Durchlauf(modern)
     local alteFehler = #(QK.root.fehler or {})
     QK.Tracker:Aktualisieren()
     pruefe(#(QK.root.fehler or {}) == alteFehler, "Prognose in der Erfahrungszeile ohne Fehler")
+    local gesichert = QK.root.fehler
+    QK.root.fehler = { "alt" }
+    SlashCmdList.QUESTKOMPASS("fehler leeren")
+    pruefe(#QK.root.fehler == 0, "Fehlerprotokoll leeren")
+    QK.root.fehler = gesichert
     pruefe(QK.Text("Geheimname") == nil and #QK.Extras:ZieleFuer("Geheimname") == 0 and #tg.zeilen == 0, "geschützte Namen werden übersprungen")
     pruefe(#(QK.root.fehler or {}) == fehlerVorher and QuestkompassPfeil.gezeigt, "Pfeil und Liste laufen mit geschütztem Tempo")
     issecretvalue = echterVergleich

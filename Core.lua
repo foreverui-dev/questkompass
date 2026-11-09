@@ -594,7 +594,7 @@ local HILFE = {
   L"/qk fokus – Fokus-Quest aufheben",
   L"/qk einblenden – ausgeblendete Quests wieder zeigen",
   L"/qk zuruecksetzen – alles auf Anfang",
-  L"/qk diagnose | fehler – technische Infos für Fehlerberichte",
+  L"/qk diagnose | fehler [leeren] – technische Infos für Fehlerberichte",
 }
 
 -- Englische Befehle
@@ -651,6 +651,9 @@ SlashCmdList.QUESTKOMPASS = function(eingabe)
     QK:Meldung(L"Einstellungen zurückgesetzt. /qk einrichten startet den Assistenten.")
   elseif befehl == "diagnose" then
     QK.Compat:Diagnose(true)
+  elseif befehl == "fehler" and (rest == "leeren" or rest == "clear") then
+    QK.root.fehler = {}
+    QK:Meldung(L"Fehlerprotokoll geleert.")
   elseif befehl == "fehler" then
     local liste = QK.root.fehler
     if not liste or #liste == 0 then
