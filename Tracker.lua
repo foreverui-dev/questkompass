@@ -675,7 +675,7 @@ end
 -- Pfeile, Entfernungen, Zeitlimits (mehrmals pro Sekunde)
 ---------------------------------------------------------------------------
 function QK:DauerText(sek)
-  sek = math.max(0, math.floor(sek + 0.5))
+  sek = math.max(0, math.floor((QK.Zahl(sek) or 0) + 0.5))
   if sek >= 3600 then return ("%d:%02d Std."):format(math.floor(sek / 3600), math.floor((sek % 3600) / 60)) end
   return ("%d:%02d"):format(math.floor(sek / 60), sek % 60)
 end

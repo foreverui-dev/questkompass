@@ -6,6 +6,9 @@ local L = QK.L
 local metadaten = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 QK.version = (metadaten and metadaten(ADDON, "Version")) or "dev"
 if QK.version:find("@") then QK.version = "dev" end
+-- Stand des Codes: bei jeder Änderung hochzählen. Ein neuer Stand leert das Fehlerprotokoll,
+-- damit dort nur Fehler der aktuellen Version stehen.
+QK.codeStand = "2026-11-13"
 
 QK.farben = {
   gold   = { 0.95, 0.77, 0.35 },
@@ -413,6 +416,7 @@ QK:Ereignis("ADDON_LOADED", function(name)
   QuestkompassCharDB.merkliste = QuestkompassCharDB.merkliste or {}
   QuestkompassCharDB.geschaetzt = QuestkompassCharDB.geschaetzt or {}
   QuestkompassCharDB.zaehler = QuestkompassCharDB.zaehler or {}
+  if root.fehlerStand ~= QK.codeStand then root.fehler = {}; root.fehlerStand = QK.codeStand end
   root.charaktere = root.charaktere or {}
   root.epTabelle = root.epTabelle or {}
   root.questGegenstaende = root.questGegenstaende or {}

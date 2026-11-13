@@ -597,6 +597,7 @@ local function Durchlauf(modern)
     pruefe(#(QK.root.fehler or {}) == alteFehler, "Prognose in der Erfahrungszeile ohne Fehler")
     local gesichert = QK.root.fehler
     QK.root.fehler = { "alt" }
+    pruefe(QK:DauerText(nil) == "0:00", "Dauer ohne Wert")
     SlashCmdList.QUESTKOMPASS("fehler leeren")
     pruefe(#QK.root.fehler == 0, "Fehlerprotokoll leeren")
     QK.root.fehler = gesichert
