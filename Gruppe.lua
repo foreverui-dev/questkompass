@@ -62,6 +62,7 @@ local function Empfangen(praefix, text, kanal, absender)
   local name = Ambiguate and Ambiguate(absender, "short") or absender:match("^[^-]+")
   if name == UnitName("player") then return end
   local art = text:sub(1, 1)
+  if art == "V" then return end   -- Versionsnachricht, die liest Neuigkeiten.lua
   if art == "W" then
     if QK.Unterwegs then QK.Unterwegs:WegpunktEmpfangen(name, text:sub(2)) end
     return

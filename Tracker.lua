@@ -19,73 +19,12 @@ local zeilen, benutzt = {}, 0
 local eingeklappt = false
 local versatz = 0           -- Mausrad: so viele Einträge sind nach oben weggeblättert
 local sichtbar = {}         -- angezeigte Quests in Reihenfolge (für Tastenkürzel)
-local menue
 local knoepfe = {}          -- Questgegenstände (sichere Knöpfe)
 local neu = {}              -- questID -> Zeitpunkt der Annahme
 local logVoll = false
 local signatur, sichtbarBis = nil, 0   -- Mouseover-Modus: kurz zeigen, wenn sich etwas ändert
 local imKampf = false
 T.neu = neu
-
----------------------------------------------------------------------------
--- Kontextmenü
----------------------------------------------------------------------------
-local function MenueErstellen()
-  menue = CreateFrame("Frame", "QuestkompassMenue", UIParent)
-  menue:SetFrameStrata("DIALOG")
-  menue:SetClampedToScreen(true)
-  menue:EnableMouse(true)
-  QK.UI.Rahmen(menue, 0.96)
-  menue.knoepfe = {}
-  menue:Hide()
-  tinsert(UISpecialFrames, "QuestkompassMenue")
-  menue:SetScript("OnShow", function(self) self.zeit, self.weg = 0, 0 end)
-  menue:SetScript("OnUpdate", function(self, el)
-    self.zeit = self.zeit + el
-    if self.zeit > 0.5 and not self:IsMouseOver() then
-      self.weg = self.weg + el
-      if self.weg > 1.5 then self:Hide() end
-    else
-      self.weg = 0
-    end
-  end)
-end
-
-local function MenueZeigen(anker, eintraege)
-  if not menue then MenueErstellen() end
-  local g = QK.farben.gold
-  QK.UI.RandFarbe(menue, { g[1], g[2], g[3], 0.5 })
-  for _, k in ipairs(menue.knoepfe) do k:Hide() end
-  local breite = 160
-  for i, e in ipairs(eintraege) do
-    local k = menue.knoepfe[i]
-    if not k then
-      k = CreateFrame("Button", nil, menue)
-      k:SetHeight(18)
-      k.text = k:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-      k.text:SetPoint("LEFT", 10, 0)
-      local hl = k:CreateTexture(nil, "HIGHLIGHT")
-      hl:SetAllPoints()
-      hl:SetColorTexture(1, 1, 1, 0.08)
-      menue.knoepfe[i] = k
-    end
-    k:SetPoint("TOPLEFT", 4, -4 - (i - 1) * 18)
-    k:SetPoint("RIGHT", menue, "RIGHT", -4, 0)
-    k.text:SetText(e[1])
-    k:SetScript("OnClick", function() menue:Hide(); QK:Sicher("Menü", e[2]) end)
-    k:Show()
-    breite = math.max(breite, (k.text:GetStringWidth() or 100) + 28)
-  end
-  menue:SetSize(breite, #eintraege * 18 + 8)
-  menue:ClearAllPoints()
-  if anker:GetLeft() and anker:GetLeft() < 220 then
-    menue:SetPoint("TOPLEFT", anker, "TOPRIGHT", 4, 0)
-  else
-    menue:SetPoint("TOPRIGHT", anker, "TOPLEFT", -4, 0)
-  end
-  menue:SetScale(QK:Groesse())
-  menue:Show()
-end
 
 ---------------------------------------------------------------------------
 -- Fokus
@@ -135,6 +74,7 @@ end
 local function QuestMenue(zeile, q)
   local fokus = QK.Compat:Fokus() == q.id
   local e = {
+    { QK.Text(q.titel) or "?", titel = true },
     { fokus and L"Fokus aufheben" or L"Als Fokus setzen (Navigationspfeil)", function()
       QK.Compat:FokusSetzen(not fokus and q.id or nil); T:Aktualisieren() end },
     { L"Im Questlog öffnen", function() QK.Compat:QuestOeffnen(q) end },
@@ -154,7 +94,7 @@ local function QuestMenue(zeile, q)
     QK:Meldung(L"„%s“ ausgeblendet. /qk einblenden holt sie zurück.", q.titel)
     T:Aktualisieren()
   end }
-  MenueZeigen(zeile, e)
+  QK.UI:Menue(zeile, e, true)
 end
 
 local function ZeileKlick(self, taste)
@@ -824,7 +764,7 @@ function T:Ruhe(kampf)
   if kampf ~= nil then imKampf = kampf end
   local alpha = (imKampf and QK.db.ruhemodus) and QK.db.ruheAlpha or 1
   if QK.db.mouseover and not rahmen:IsMouseOver() and GetTime() > sichtbarBis
-    and not (menue and menue:IsShown()) then
+    and not QK.UI:MenueOffen() then
     alpha = 0
   end
   if rahmen:GetAlpha() ~= alpha then rahmen:SetAlpha(alpha) end

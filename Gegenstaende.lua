@@ -140,7 +140,7 @@ function GG:Ausgeben()
     local e = QK.root.questGegenstaende[k]
     local teile = {}
     for _, z in ipairs(GG:Zeilen(k)) do teile[#teile + 1] = (z[1]:gsub("|T.-|t%s*", "")) end
-    print("  " .. ((e and e.n) or k) .. ": " .. table.concat(teile, "; "))
+    DEFAULT_CHAT_FRAME:AddMessage("  " .. ((e and e.n) or k) .. ": " .. table.concat(teile, "; "))
   end
 end
 

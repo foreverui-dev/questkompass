@@ -1,12 +1,11 @@
 -- Questkompass: Hauptfenster im ForeverUI-Design. Beim ersten Start führt es als Assistent
 -- Schritt für Schritt durch die Einstellungen; danach ist es das Einstellungsfenster mit
--- Seitenleiste, Suche und eingebetteten Bereichen (Questbuch, Teilen, Fehler melden).
+-- Seitenleiste, Suche und eingebetteten Bereichen (Questbuch aus Gebiet.lua, Hilfe aus Hilfe.lua, Neuigkeiten).
 local ADDON, QK = ...
 local A = QK:Modul("Assistent")
 local L = QK.L
 local UI = QK.UI
 
-A.DISCORD = "https://discord.gg/Sh8zyYUKRX"
 A.ASSISTENT_SEITEN = 12              -- Seiten des Einrichtungsassistenten, danach nur Einstellungen
 
 local fenster, seitenTitel, punkte, zurueck, weiter, inhalt
@@ -428,32 +427,7 @@ local function SeitenBauen()
       .. L"Viel Spaß in Azeroth! Ideen und Wünsche gern über foreverui.de.")
   end)
 
-  -- Nur in den Einstellungen (Hilfe)
-  NeueSeite(L"Neuigkeiten", function(s)
-    Absatz(s, L"|cfff2c45aNeu in Questkompass 1.1|r\n\n"
-      .. L"• Neues Aussehen wie bei allen ForeverUI-Addons: ein Fenster mit Seitenleiste, Suche und veränderbarer Größe. Das Questbuch steht jetzt auch hier.\n"
-      .. L"• Symbol an Quest-Gegnern und Questgegenstände im Tooltip, auch für deine Twinks.\n"
-      .. L"• Leichen-Pfeil, Wegpunkte mit der Gruppe teilen, Händler-, Bank- und Verkaufshinweise.\n"
-      .. L"• Sitzungsbericht mit Stufenprognose (|cfff2c45a/qk sitzung|r), Quest-Gegner ansagen (|cfff2c45a/qk gegner|r).\n"
-      .. L"• Sechs Akzentfarben, „Seite zurücksetzen“ und Sprachwechsel ohne /reload.\n\n"
-      .. L"Die ganze Liste steht im Changelog auf CurseForge und Wago.")
-  end)
-
-  NeueSeite(L"Discord und Feedback", function(s, merke)
-    Absatz(s, L"Fragen, Ideen oder einen Fehler gefunden? Schau im Discord von ForeverUI vorbei. "
-      .. L"Dort lesen wir alles und antworten gern.\n\nLink kopieren (Klick markiert, Strg+C kopiert):")
-    local feld = CreateFrame("EditBox", nil, s, "InputBoxTemplate")
-    feld:SetAutoFocus(false)
-    feld:SetSize(320, 22)
-    feld:SetPoint("TOPLEFT", 6, -96)
-    UI.Schreibschutz(feld)
-    UI.Lesetext(feld, A.DISCORD)
-    feld:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    local t = Text(s, "GameFontDisableSmall", L"Bei Fehlern hilft der Bereich „Fehler melden“: Er sammelt alles, was wir zum Nachstellen brauchen.", 500)
-    t:SetPoint("TOPLEFT", 0, -134)
-  end)
 end
-
 
 local function SeitenErgaenzen()
   -- Werte, die nicht über Schalter laufen, für „Seite zurücksetzen“
@@ -678,7 +652,7 @@ local function Navi()
     { L"Darstellung", { 3, L"Aussehen" }, { 4, L"Lage" }, { 5, L"Sortierung" }, { 9, L"Feinschliff" } },
     { L"Funktionen", { 6, L"Navigation" }, { 7, L"Kleine Helfer" }, { 8, L"Noch mehr" }, { 10, L"Unterwegs" }, { "teilen", L"Teilen und Übernehmen" } },
     { L"Zugang", { 2, L"Barrierefreiheit" }, { 11, L"Profil und Tasten" } },
-    { L"Hilfe", { 13, L"Neuigkeiten" }, { 14, L"Discord und Feedback" }, { 12, L"Bedienung" }, { "fehler", L"Fehler melden" }, { "assistent", L"Assistent starten" } },
+    { L"Hilfe", { "neuigkeiten", L"Neuigkeiten" }, { "discord", L"Discord und Feedback" }, { 12, L"Bedienung" }, { "fehlerbericht", L"Fehler melden" }, { "assistent", L"Assistent starten" } },
   }
 end
 
@@ -783,7 +757,7 @@ end
 local function Ansicht()
   local e = alsEinstellungen
   local g = QK.db.hauptGroesse
-  if e then fenster:SetSize(math.max(760, g and g[1] or 820), math.max(640, g and g[2] or 660)) else fenster:SetSize(560, 440) end
+  if e then fenster:SetSize(math.max(760, g and g[1] or 820), math.max(620, g and g[2] or 660)) else fenster:SetSize(560, 440) end
   if fenster.griff then fenster.griff:SetShown(e) end
   if fenster.suche then fenster.suche:SetShown(e); if not e then fenster.trefferListe:Hide() end end
   fenster.leiste:SetShown(e)
@@ -897,123 +871,9 @@ local function SucheBauen()
   box:SetScript("OnEditFocusLost", function() C_Timer.After(0.2, function() if not box:HasFocus() then liste:Hide() end end) end)
 end
 
----------------------------------------------------------------------------
--- Bereiche „Teilen und Übernehmen“ und „Fehler melden“
----------------------------------------------------------------------------
--- Mehrzeiliges Textfeld mit Bildlauf
-local function Textkasten(eltern, name, oben, unten)
-  local rolle = CreateFrame("ScrollFrame", name and (name .. "Rolle") or nil, eltern, "UIPanelScrollFrameTemplate")
-  rolle:SetPoint("TOPLEFT", 16, oben)
-  rolle:SetPoint("BOTTOMRIGHT", -32, unten)
-  local feld = CreateFrame("EditBox", name, rolle)
-  feld:SetMultiLine(true)
-  feld:SetAutoFocus(false)
-  feld:SetFontObject("GameFontHighlightSmall")
-  feld:SetWidth(460)
-  rolle:SetScrollChild(feld)
-  rolle:SetScript("OnSizeChanged", function(_, w) if type(w) == "number" then feld:SetWidth(w) end end)
-  feld:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-  UI.Schreibschutz(feld)
-  local hg = CreateFrame("Frame", nil, eltern)
-  hg:SetPoint("TOPLEFT", rolle, "TOPLEFT", -6, 6)
-  hg:SetPoint("BOTTOMRIGHT", rolle, "BOTTOMRIGHT", 26, -6)
-  Rahmen(hg, 0.5, { 1, 1, 1, 0.08 })
-  hg:SetFrameLevel(math.max(1, (rolle:GetFrameLevel() or 2) - 1))
-  return feld
-end
-
-local teilen
-local function TeilenHolen()
-  if teilen then return teilen end
-  local f = CreateFrame("Frame", "QuestkompassTeilen", fenster.kasten)
-  f.hinweis = UI.Text(f, "GameFontHighlightSmall", "", 500)
-  f.hinweis:SetPoint("TOPLEFT", 16, -14)
-  f.hinweis:SetPoint("RIGHT", -16, 0)
-  f.hinweis:SetJustifyV("TOP")
-  f.text = Textkasten(f, "QuestkompassTeilenText", -64, 44)
-  local x = 16
-  local function knopf(text, breite, fn)
-    local k = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    k:SetSize(breite, 22)
-    k:SetText(text)
-    k:SetPoint("BOTTOMLEFT", x, 12)
-    k:SetScript("OnClick", fn)
-    x = x + breite + 8
-    return k
-  end
-  knopf(L"Meine Einstellungen", 150, function() A:Teilen("export") end)
-  knopf(L"Fremden Text einfügen", 160, function() A:Teilen("import") end)
-  knopf(L"Tagebuch als Text", 140, function() A:Teilen("tagebuch") end)
-  f.ok = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  f.ok:SetSize(110, 22)
-  f.ok:SetText(L"Übernehmen")
-  f.ok:SetPoint("BOTTOMRIGHT", -16, 12)
-  f.ok:SetScript("OnClick", function()
-    local geklappt, n = QK.Extras:Import(f.text:GetText())
-    if geklappt then QK:Meldung(L"%d Einstellungen übernommen.", n); A:Auffrischen()
-    else QK:Meldung(L"Dieser Text enthält keine Questkompass-Einstellungen.") end
-  end)
-  teilen = f
-  return f
-end
-
-A.teilenArt, A.teilenText = "export", nil
-local function TeilenZeichnen()
-  local f = TeilenHolen()
-  local art = A.teilenArt
-  if art == "import" then
-    f.hinweis:SetText(L"Füge hier Einstellungen ein, die dir jemand geschickt hat (Strg+V), und klick auf „Übernehmen“.")
-    f.text.nurLesen = false
-    if not f.importBereit then f.text:SetText(""); f.importBereit = true end
-    f.ok:Show()
-    f.text:SetFocus()
-  else
-    f.importBereit = nil
-    local text = A.teilenText or (art == "tagebuch" and QK.Unterwegs and QK.Unterwegs:TagebuchText()) or QK.Extras:Export()
-    f.hinweis:SetText(art == "tagebuch" and L"Die letzten 50 Einträge deines Tagebuchs. Ein Klick markiert alles, Strg+C kopiert."
-      or art == "text" and L"Ein Klick markiert alles, Strg+C kopiert."
-      or L"Deine Einstellungen als Text. Ein Klick markiert alles, Strg+C kopiert. So gibst du sie an Freunde oder deinen Twink weiter.")
-    UI.Lesetext(f.text, text)
-    f.ok:Hide()
-  end
-end
-
--- art: "export" | "import" | "tagebuch" | "text"; text: eigener Text statt des üblichen
-function A:Teilen(art, text, titel)
-  A.teilenArt, A.teilenText = art or "export", text
-  if bereiche.teilen then bereiche.teilen.titel = titel or L"Teilen und Übernehmen" end
-  A:Bereich("teilen")
-end
-
-local fehlerRahmen
-local function FehlerHolen()
-  if fehlerRahmen then return fehlerRahmen end
-  local f = CreateFrame("Frame", "QuestkompassFehlerbericht", fenster.kasten)
-  local t = UI.Text(f, "GameFontHighlightSmall", L"Hier steht alles, was wir zum Nachstellen eines Fehlers brauchen. Ein Klick markiert den Text, Strg+C kopiert ihn. Schick ihn uns im Discord von ForeverUI (siehe „Discord und Feedback“).", 500)
-  t:SetPoint("TOPLEFT", 16, -14)
-  t:SetPoint("RIGHT", -16, 0)
-  f.text = Textkasten(f, "QuestkompassFehlerText", -64, 44)
-  local leeren = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  leeren:SetSize(160, 22)
-  leeren:SetText(L"Protokoll leeren")
-  leeren:SetPoint("BOTTOMLEFT", 16, 12)
-  leeren:SetScript("OnClick", function() QK.root.fehler = {}; A:Auffrischen() end)
-  fehlerRahmen = f
-  return f
-end
-
-function A:FehlerText()
-  local z = { ("Questkompass %s · Stand %s · Spiel %s · %s"):format(tostring(QK.version), QK.codeStand or "?",
-    tostring(select(4, GetBuildInfo())), GetLocale and GetLocale() or "?") }
-  local liste = QK.root.fehler or {}
-  if #liste == 0 then z[#z + 1] = L"Keine Fehler aufgezeichnet." end
-  for _, e in ipairs(liste) do z[#z + 1] = e end
-  return table.concat(z, "\n")
-end
-
-local function FehlerZeichnen()
-  UI.Lesetext(FehlerHolen().text, A:FehlerText())
-end
+-- Teilen, Fehlerbericht und Discord stehen in Hilfe.lua, die Neuigkeiten in Neuigkeiten.lua.
+function A:Teilen(art, text, titel) QK.Hilfe:Teilen(art, text, titel) end
+function A:FehlerText() return table.concat(QK.Hilfe:Fehlerbericht(), "\n") end
 
 ---------------------------------------------------------------------------
 -- Aufbau
@@ -1022,8 +882,8 @@ local function Erstellen()
   fenster = CreateFrame("Frame", "QuestkompassAssistent", UIParent)
   fenster:SetSize(560, 440)
   fenster:SetResizable(true)
-  if fenster.SetResizeBounds then fenster:SetResizeBounds(760, 640, 1600, 1200)
-  elseif fenster.SetMinResize then fenster:SetMinResize(760, 640) end
+  if fenster.SetResizeBounds then fenster:SetResizeBounds(760, 620, 1600, 1200)
+  elseif fenster.SetMinResize then fenster:SetMinResize(760, 620) end
   local griff = CreateFrame("Button", nil, fenster)
   griff:SetSize(16, 16)
   griff:SetPoint("BOTTOMRIGHT", -2, 2)
@@ -1150,9 +1010,12 @@ function A:Neubauen()
   fenster:Hide()
   fenster:SetScript("OnKeyDown", nil)
   wipe(seiten); wipe(navi); wipe(goldTexte); UI.GoldVergessen()
-  teilen, fehlerRahmen = nil, nil
   fenster, markierung, punkte, auswahl, A.letzteSeite = nil, nil, nil, 0, nil
-  if QK.Gebiet.Neubauen then QK.Gebiet:Neubauen() end
+  -- Bereiche der anderen Dateien neu anmelden, damit Titel und Texte in der neuen Sprache stehen
+  for _, m in ipairs({ QK.Gebiet, QK.Hilfe, QK.Neuigkeiten }) do
+    if m and m.Neubauen then m:Neubauen() end
+    if m and m.Anmelden then m:Anmelden() end
+  end
   if offen then self:Oeffnen(alteSeite, alsE, alterBereich) end
 end
 
@@ -1160,8 +1023,6 @@ end
 -- Eintrag in den Spieleinstellungen, Bereiche anmelden
 ---------------------------------------------------------------------------
 function A:Start()
-  A:BereichAnmelden("teilen", L"Teilen und Übernehmen", TeilenHolen, TeilenZeichnen)
-  A:BereichAnmelden("fehler", L"Fehler melden", FehlerHolen, FehlerZeichnen)
   local panel = CreateFrame("Frame")
   panel.name = "Questkompass"
   local t = Text(panel, "GameFontNormalLarge", "Questkompass")

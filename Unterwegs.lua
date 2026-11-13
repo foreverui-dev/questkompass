@@ -318,7 +318,7 @@ function U:SitzungAusgeben()
   QK:Meldung(L"Sitzungsbericht:")
   local teile = {}
   for _, z in ipairs(U:SitzungZeilen()) do
-    print("  " .. z[1] .. ": " .. z[2])
+    DEFAULT_CHAT_FRAME:AddMessage("  " .. z[1] .. ": " .. z[2])
     teile[#teile + 1] = z[1] .. " " .. z[2]
   end
   QK:Sprechen(table.concat(teile, ". "))

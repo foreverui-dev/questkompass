@@ -2,80 +2,57 @@
 
 ## 1.1.0
 
-30 weitere Funktionen und Verbesserungen:
+- Neues Aussehen wie bei allen ForeverUI-Addons: Einstellungen und Questbuch in einem Fenster mit Seitenleiste (Questbuch, Darstellung, Funktionen, Zugang, Hilfe), Suche über alle Einstellungen und veränderbarer Größe, die gemerkt wird.
+- Das Questbuch steht in der Seitenleiste, `/qk buch` öffnet und schließt es wie bisher.
+- Sechs Akzentfarben (Gold, Klassenfarbe, Eis, Glut, Wald, Silber), ein Wechsel wirkt sofort. Smaragd wird zu Wald.
+- Jede Einstellungsseite hat einen Knopf „Seite zurücksetzen“. Sprachwechsel ohne /reload, auch mit `/qk sprache`.
+- Hilfe im Hauptfenster: Neuigkeiten (`/qk neu`), Discord und Feedback (`/qk feedback`), Fehler melden (`/qk fehlerbericht`).
+- Teilen und Übernehmen (Einstellungen, fremder Text, Tagebuch als Text) im Hauptfenster statt eigenem Fenster.
+- Hinweis nach einem Update und wenn jemand in Gruppe oder Gilde eine neuere Version hat.
+- Gamepad: die Schultertasten blättern durch die Seitenleiste.
+- Questgegenstände im Tooltip: für welche Quests ein Gegenstand gebraucht wird, auch bei deinen Twinks, mit Anzahl im Besitz und auf der Bank (`/qk gegenstaende`).
+- Symbol an Quest-Gegnern an der Namensplakette mit Stand, in drei Größen (`/qk plaketten`), bei hohem Kontrast mit dunklem Hintergrund.
+- Anvisierte Quest-Gegner markieren ihre Quest in der Liste, auf Wunsch mit Hinweiston.
+- `/qk gegner` und Tastenkürzel: sagt alle Quest-Gegner in der Nähe mit Stand an.
+- Händler-, Verkaufs-, Bank- und Beute-Hinweise für Questgegenstände.
+- Questtext und Schwierigkeit als Wort im Tooltip der Liste, Ton bei jedem fertigen Ziel (optional).
+- Stufenprognose im Tooltip der Erfahrungszeile, wöchentliche Quests mit Countdown.
+- Leichen-Pfeil: nach dem Freilassen führt der Fokuspfeil zum Leichnam.
+- `/qk pos` zeigt die eigene Position, `/qk weg teilen` schickt den Wegpunkt an die Gruppe.
+- Geschätzte Restzeit der Route unter dem Fokuspfeil, Fokus springt nach einer fertigen Quest weiter (optional).
+- `/qk sitzung`: Sitzungsbericht mit Dauer, Quests, EP pro Stunde, Gold und Prognose. `/qk tagebuchtext`: Tagebuch zum Kopieren.
+- Die Suche findet Quests im Log auch über ihre Ziele und deine Notizen. Fünf neue Meilensteine.
+- Geteilte Quests automatisch annehmen (optional), Gruppenquest-Warnung, Questdialog und Belohnungswahl vorlesen.
+- Behoben: Fehlermeldungen durch geschützte Werte des Spiels („secret value“) in Fokuspfeil, Liste und Tooltips.
+- Behoben: Belohnungs-Vergleich und Kartenpunkte auf WoW Forever, Fehler bei der Stufenprognose.
+- Behoben: Das Fehlerprotokoll leert sich nach einem Update, `/qk fehler leeren` leert es von Hand.
 
-Quest-Gegner
-1. Anvisierte Quest-Gegner markieren ihre Quest in der Liste („anvisiert“)
-2. Hinweiston, wenn ein Quest-Gegner auftaucht, mit Vorlesen (optional)
-3. `/qk gegner` und Tastenkürzel: sagt alle Quest-Gegner in der Nähe mit Stand an
-4. Symbol an der Namensplakette in drei Größen (`/qk plaketten klein | normal | gross`)
-5. Bei hohem Kontrast bekommt das Symbol einen dunklen Hintergrund und weißen Stand
+**English**
 
-Questgegenstände
-6. Tooltip zeigt, wie viele du hast, auch mit Bank
-7. Verkaufswarnung: Questgegenstand beim Händler verkauft? Hinweis mit Rückkauf
-8. Händler-Hinweis: der Händler verkauft etwas, das deine Quests brauchen
-9. Bank-Hinweis: was deine anderen Charaktere gerade sammeln
-10. Beute-Hinweis: erbeuteter Gegenstand wird von einem Twink oder für eine spätere Quest gebraucht
-
-Liste
-11. Questtext (Auftrag) im Tooltip der Liste
-12. Schwierigkeit als Wort: leicht, passend, schwer, sehr schwer
-13. Ton bei jedem fertigen Ziel (optional)
-14. Stufenprognose: „Stufe 23 in etwa 40 Min.“ im Tooltip der Erfahrungszeile
-15. Wöchentliche Quests mit Countdown bis zum Wochenreset
-
-Navigation
-16. Leichen-Pfeil: nach dem Freilassen führt der Fokuspfeil zum Leichnam, danach ist der alte Wegpunkt wieder da
-17. `/qk pos`: eigene Position anzeigen und in den Chat legen
-18. `/qk weg teilen`: Wegpunkt an die Gruppe schicken, Mitspieler mit Questkompass können ihn übernehmen
-19. Route: geschätzte Restzeit unter dem Fokuspfeil
-20. Fokus springt weiter: ist die Fokus-Quest fertig, rückt die nächstgelegene nach (optional)
-
-Questbuch und Statistik
-21. `/qk sitzung`: Sitzungsbericht mit Dauer, Quests, EP pro Stunde, Gold und Prognose
-22. `/qk tagebuchtext`: die letzten 50 Tagebucheinträge zum Kopieren
-23. Suche findet Quests im Log auch über ihre Ziele und deine Notizen
-24. Fünf neue Meilensteine: Zielstrebig, Unermüdlich, Nachteule, Frühaufsteher, Zurück ins Leben
-25. Sitzung und Prognose im Tooltip von Listenkopf und Minimap-Knopf
-
-Komfort und Barrierefreiheit
-26. Von Gruppenmitgliedern geteilte Quests automatisch annehmen (optional, Umschalt hält an)
-27. Gruppenquest-Warnung beim Lesen: „empfohlen für 3 Spieler“
-28. Questdialog vorlesen (Titel, Auftrag, Gruppengröße), wenn Vorlesen an ist
-29. Belohnungswahl vorlesen
-30. Neue Assistent-Seite „Unterwegs“ für alle neuen Schalter und drei neue Tastenkürzel (Quest-Gegner ansagen, Position, Sitzungsbericht)
-
-Neues Aussehen (einheitlich mit allen ForeverUI-Addons):
-- Einstellungen und Questbuch in einem Fenster mit Seitenleiste (Questbuch, Darstellung, Funktionen, Zugang, Hilfe), Suche über alle Einstellungen und veränderbarer Größe, die gemerkt wird
-- Questbuch-Reiter stehen in der Seitenleiste, `/qk buch` öffnet und schließt es wie bisher
-- Sechs Akzentfarben (Gold, Klassenfarbe, Eis, Glut, Wald, Silber), Wechsel wirkt sofort; Smaragd wird zu Wald
-- „Seite zurücksetzen“ stellt nur die Einstellungen der offenen Seite zurück
-- Sprachwechsel ohne /reload
-- Neue Hilfeseiten: Neuigkeiten, Discord und Feedback, Fehler melden (Bericht zum Kopieren, Protokoll leeren)
-- Teilen und Übernehmen (Einstellungen, fremder Text, Tagebuch als Text) im Hauptfenster statt eigenem Fenster
-- Flache Flächen mit feinen Rändern statt der alten Rahmen, auch im Kontextmenü der Liste
-- Gamepad: Schultertasten blättern durch die Seitenleiste
-
-Außerdem:
-
-- Questgegenstände: Im Tooltip eines Gegenstands steht, für welche Quests er noch gebraucht wird
-  - eigene Quests im Log mit Stand, bei fertigem Ziel der Hinweis „bis zur Abgabe behalten“
-  - Quests deiner anderen Charaktere (praktisch an der Bank)
-  - Quests, die das Addon schon einmal mit diesem Gegenstand gesehen hat und die dieser Charakter noch machen kann
-- Questkompass lernt diese Gegenstände kontoweit aus dem Questlog aller Charaktere und wird so mit der Zeit vollständiger
-- `/qk gegenstaende` listet alles, was deine Quests gerade brauchen
-- Auch in verlinkten Gegenständen im Chat; im Assistenten unter „Feinschliff“ abschaltbar
-- Symbol an Quest-Gegnern: Gegner in der Nähe, die du für eine Quest besiegen musst, bekommen einen Totenkopf an der Namensplakette, bei Questgegenständen einen Beutel, dazu den Stand (z. B. 3/10). Braucht eingeblendete Namensplaketten (Taste V)
-
-Behoben:
-
-- Fehlermeldungen von Fokuspfeil und Zielliste („secret number value“): Laufgeschwindigkeit, Position und Blickrichtung, die das Spiel geschützt liefert, werden jetzt übersprungen statt verglichen
-- Belohnungs-Markierung und Belohnungs-Vergleich liefen ins Leere, weil der Client GetItemInfo nur noch unter C_Item anbietet
-- Fehler „secret string value“ in Tooltips (Extras.lua): geschützte Namen von Gegnern und Gegenständen werden jetzt übersprungen
-- Fehler in der Zielliste bei der Stufenprognose (Tracker.lua, „sek“ ohne Wert)
-- Fehler beim Übernehmen von Kartenpunkten (Navigation.lua, USER_WAYPOINT_UPDATED): WoW Forever liefert Kartenpunkte ohne GetXY
-- Fehlerprotokoll: nach einem Update werden alte Einträge automatisch geleert, `/qk fehler leeren` leert es von Hand
+- New look shared by all ForeverUI addons: settings and quest book in one window with a sidebar (Quest book, Display, Features, Access, Help), a search across all settings and an adjustable size that is remembered.
+- The quest book lives in the sidebar, `/qk buch` opens and closes it as before.
+- Six accent colors (Gold, class color, Ice, Ember, Forest, Silver), changes apply instantly. Emerald becomes Forest.
+- Every settings page has a "Reset page" button. Switching language without /reload, also with `/qk sprache`.
+- Help in the main window: What's new (`/qk news`), Discord and feedback (`/qk feedback`), Report a bug (`/qk bugreport`).
+- Share and import (settings, someone else's text, journal as text) in the main window instead of a separate window.
+- Notice after an update and when someone in your group or guild has a newer version.
+- Gamepad: the shoulder buttons step through the sidebar.
+- Quest items in the tooltip: which quests still need an item, for your alts too, with the amount in your bags and bank (`/qk gegenstaende`).
+- Icon on quest enemies at the nameplate with progress, in three sizes (`/qk plaketten`), with a dark background in high contrast.
+- Targeted quest enemies mark their quest in the list, with an optional sound.
+- `/qk gegner` and a key binding announce all quest enemies nearby with progress.
+- Vendor, selling, bank and loot hints for quest items.
+- Quest text and difficulty as a word in the list tooltip, a sound for each finished objective (optional).
+- Level forecast in the experience row tooltip, weekly quests with a countdown.
+- Corpse arrow: after releasing, the focus arrow leads you to your corpse.
+- `/qk pos` shows your position, `/qk weg teilen` sends your waypoint to the group.
+- Estimated remaining route time below the focus arrow, focus moves on after a finished quest (optional).
+- `/qk sitzung`: session report with duration, quests, XP per hour, gold and forecast. `/qk tagebuchtext`: journal as text.
+- Search also finds quests in your log by their objectives and your notes. Five new milestones.
+- Auto-accept shared quests (optional), group quest warning, quest dialogs and reward choice read aloud.
+- Fixed: errors caused by protected game values ("secret value") in the focus arrow, list and tooltips.
+- Fixed: reward comparison and map pins on WoW Forever, an error in the level forecast.
+- Fixed: the error log clears itself after an update, `/qk fehler leeren` clears it by hand.
 
 ## 1.0.0 – erste öffentliche Version
 

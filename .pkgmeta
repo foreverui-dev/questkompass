@@ -5,3 +5,9 @@ ignore:
   - scripts
   - README.md
   - .github
+  - tools
+  - CHECKLISTE.md
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown

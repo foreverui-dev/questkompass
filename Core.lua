@@ -8,7 +8,7 @@ QK.version = (metadaten and metadaten(ADDON, "Version")) or "dev"
 if QK.version:find("@") then QK.version = "dev" end
 -- Stand des Codes: bei jeder Änderung hochzählen. Ein neuer Stand leert das Fehlerprotokoll,
 -- damit dort nur Fehler der aktuellen Version stehen.
-QK.codeStand = "2026-11-13b"
+QK.codeStand = "2026-11-13c"
 
 QK.farben = {
   gold   = { 0.95, 0.77, 0.35 },
@@ -725,5 +725,7 @@ QK:Befehl({ "sprache", "language" }, function(rest)
   end
   QK.db.sprache = rest
   QK:SpracheAnwenden()
-  QK:Meldung(L"Sprache geändert. Ganz wirkt sie nach /reload.")
+  if QK.Assistent then QK.Assistent:Neubauen() end
+  QK:Anwenden()
+  QK:Meldung(L"Sprache geändert.")
 end, L"/qk sprache de | en | auto – Sprache der Oberfläche")

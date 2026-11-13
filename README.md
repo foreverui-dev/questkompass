@@ -51,6 +51,9 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 | `/qk einblenden` | ausgeblendete Quests wieder zeigen |
 | `/qk zuruecksetzen` | alle Einstellungen zurücksetzen |
 | `/qk diagnose` · `/qk fehler` | technische Infos für Fehlerberichte |
+| `/qk fehlerbericht` | Fehlerbericht zum Kopieren im Hauptfenster |
+| `/qk neu` | Neuigkeiten und Änderungen |
+| `/qk feedback` | Link zum Discord von ForeverUI |
 
 ## Entwicklung
 

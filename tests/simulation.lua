@@ -904,6 +904,32 @@ local function Durchlauf(modern)
   pruefe(not X:Import("Unsinn"), "fremder Text wird abgelehnt")
   X:TeilenZeigen(true)
   pruefe(QuestkompassTeilen and QuestkompassTeilen.gezeigt and QuestkompassTeilenText:GetText() == text, "Fenster zum Teilen")
+  -- Hilfe und Neuigkeiten im Hauptfenster (wie beim DPS-Meter)
+  QK.root.fehler = { "Test.lua:1: Beispiel" }
+  SlashCmdList.QUESTKOMPASS("fehlerbericht")
+  pruefe(QK.Assistent:BereichOffen("fehlerbericht") and QuestkompassFehlerberichtText:GetText():find("Beispiel", 1, true), "Fehlerbericht im Hauptfenster")
+  QK.root.fehler = {}
+  SlashCmdList.QUESTKOMPASS("feedback")
+  pruefe(QK.Assistent:BereichOffen("discord") and QuestkompassDiscordText:GetText():find(QK.Hilfe.DISCORD, 1, true) == 1, "Discord-Link zum Kopieren")
+  SlashCmdList.QUESTKOMPASS("neu")
+  pruefe(QK.Assistent:BereichOffen("neuigkeiten") and QK.Neuigkeiten:Text():find("1.1.0", 1, true), "Neuigkeiten aus dem Changelog")
+  pruefe(QK.Neuigkeiten.Neuer("1.10.0", "1.9.2") and not QK.Neuigkeiten.Neuer("dev", "1.0.0") and not QK.Neuigkeiten.Neuer("1.1.0", "1.1.0"), "Versionen vergleichen")
+  local version = QK.version
+  QK.version = "1.1.0"
+  alleTexte = {}
+  QK.Neuigkeiten:Empfangen("Questkompass", "V:9.0.0", "PARTY")
+  pruefe(QK.root.neuesteVersion == "9.0.0", "neuere Version wird gemerkt")
+  QK.Neuigkeiten:Empfangen("Questkompass", "V:|cffff0000x", "PARTY")
+  pruefe(QK.root.neuesteVersion == "9.0.0", "fremde Versionsnachricht mit Unsinn wird ignoriert")
+  QK.root.neuesteVersion, QK.version = nil, version
+  -- Sprachwechsel mit offenem Questbuch: alles neu gebaut, Titel auf Englisch
+  QK.Gebiet:Reiter("welt")
+  local fehlerVorher = #(QK.root.fehler or {})
+  SlashCmdList.QUESTKOMPASS("sprache en")
+  pruefe(QK.Assistent:BereichOffen("buch:welt") and QK.Assistent.bereiche["buch:welt"].titel == "World" and QK.Assistent.bereiche.discord.titel == "Discord and feedback", "Sprachwechsel bei offenem Questbuch")
+  SlashCmdList.QUESTKOMPASS("sprache de")
+  pruefe(QK.Assistent.bereiche["buch:welt"].titel == "Welt" and #(QK.root.fehler or {}) == fehlerVorher, "zurück auf Deutsch ohne Fehler")
+  QK.Assistent:Schliessen()
   -- Dauer, Statistik, Filter, Merkliste
   local id = modern and 790 or 12
   QK.char.angenommen[id], QK.char.geschaetzt[id] = time() - 120, nil

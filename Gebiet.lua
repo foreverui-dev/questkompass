@@ -594,7 +594,7 @@ function G:Neubauen()
 end
 
 -- Jeden Reiter (auch die von Planer, Erfolge, Statistik) als Bereich im Hauptfenster anmelden
-local function Anmelden()
+function G:Anmelden()
   for _, r in ipairs(REITER) do
     local id = r[1]
     QK.Assistent:BereichAnmelden("buch:" .. id, L(r[2]),
@@ -621,7 +621,7 @@ local function EPMessen()
 end
 
 function G:Start()
-  Anmelden()
+  G:Anmelden()
   sitzung.start = GetTime()
   EPMessen()
   local geplant = false

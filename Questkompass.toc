@@ -3,7 +3,7 @@
 ## Notes: Calm quest list with compass, focus arrow, routes, planner and setup wizard for WoW Forever.
 ## Notes-deDE: Ruhige Questliste mit Kompass, Fokuspfeil, Routen, Planer und Einrichtungsassistent für WoW Forever.
 ## Author: Syntaxlab
-## Version: @project-version@
+## Version: 1.1.0
 ## SavedVariables: QuestkompassDB
 ## SavedVariablesPerCharacter: QuestkompassCharDB
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
@@ -36,4 +36,7 @@ Statistik.lua
 Extras.lua
 Gamepad.lua
 Assistent.lua
+Aenderungen.lua
+Hilfe.lua
+Neuigkeiten.lua
 MinimapKnopf.lua

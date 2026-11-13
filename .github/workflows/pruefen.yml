@@ -10,9 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Lua 5.1 installieren
-        run: sudo apt-get update && sudo apt-get install -y lua5.1
-      - name: Syntax prüfen
-        run: for f in *.lua Daten/*.lua tests/*.lua; do luac5.1 -p "$f"; done
-      - name: Testlauf
-        run: lua5.1 tests/simulation.lua
+        with:
+          fetch-depth: 20
+      # Lua selbst bauen (ohne readline), damit die Prüfung nicht von den Ubuntu-Paketservern abhängt
+      - name: Lua 5.1 bauen
+        run: |
+          for i in 1 2 3 4 5; do curl -fsSL --retry 3 -o lua.tgz https://www.lua.org/ftp/lua-5.1.5.tar.gz && break; sleep 15; done
+          tar xzf lua.tgz
+          make -C lua-5.1.5 posix > /dev/null
+          sudo cp lua-5.1.5/src/lua /usr/local/bin/lua5.1
+          sudo cp lua-5.1.5/src/luac /usr/local/bin/luac5.1
+          rm -rf lua.tgz lua-5.1.5
+      - name: Prüfstandard (Syntax, Globale, Übersetzungen, Version, Tests)
+        run: lua5.1 tools/pruefen.lua
