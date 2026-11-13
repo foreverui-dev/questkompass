@@ -31,12 +31,11 @@ T.neu = neu
 -- Kontextmenü
 ---------------------------------------------------------------------------
 local function MenueErstellen()
-  menue = CreateFrame("Frame", "QuestkompassMenue", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+  menue = CreateFrame("Frame", "QuestkompassMenue", UIParent)
   menue:SetFrameStrata("DIALOG")
   menue:SetClampedToScreen(true)
-  menue:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-  menue:SetBackdropColor(0.06, 0.06, 0.08, 0.96)
-  menue:SetBackdropBorderColor(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.4)
+  menue:EnableMouse(true)
+  QK.UI.Rahmen(menue, 0.96)
   menue.knoepfe = {}
   menue:Hide()
   tinsert(UISpecialFrames, "QuestkompassMenue")
@@ -54,6 +53,8 @@ end
 
 local function MenueZeigen(anker, eintraege)
   if not menue then MenueErstellen() end
+  local g = QK.farben.gold
+  QK.UI.RandFarbe(menue, { g[1], g[2], g[3], 0.5 })
   for _, k in ipairs(menue.knoepfe) do k:Hide() end
   local breite = 160
   for i, e in ipairs(eintraege) do

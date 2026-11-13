@@ -4,12 +4,12 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 
 ## Was es kann
 
-- **Einrichtungsassistent** beim ersten Start, später derselbe Dialog als Einstellungsfenster: Stil, Akzentfarbe, Lage, Sortierung, Navigation, Helfer und Profil.
+- **Einrichtungsassistent** beim ersten Start, danach ein Hauptfenster im einheitlichen ForeverUI-Design: Seitenleiste mit Questbuch, Darstellung, Funktionen, Zugang und Hilfe, Suche über alle Einstellungen, sechs Akzentfarben, „Seite zurücksetzen“, veränderbare Größe.
 - **Zielliste** in drei Stilen, sortiert nach Entfernung, Zone oder Questlog. Auf Wunsch mit einklappbaren Zonenüberschriften, Mausrad zum Blättern, Marken für Elite, Dungeon, täglich, „Neu“ und Gruppenmitglieder auf derselben Quest.
 - **Navigation:** kleiner Kompasspfeil an jeder Quest, großer schwebender Fokuspfeil mit Entfernung und Ankunftszeit, automatischer Fokus auf die nächste Quest.
 - **Questgegenstände** lassen sich direkt an der Quest benutzen. Quests mit Zeitlimit zeigen einen Countdown.
 - **Erfahrungsvorschau:** was die fertigen Quests zusammen bringen, und ob es für den Stufenaufstieg reicht.
-- **Questbuch** mit sieben Reitern: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch), Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde), Planer (Stufenplaner, Merkliste, Vorschläge, Ruf, tägliche Quests, Aufräumen), Erfolge (Meilensteine) und Statistik (Quests pro Tag, Rekorde). Das Gebiet lässt sich filtern.
+- **Questbuch** (in der Seitenleiste des Hauptfensters) mit sieben Bereichen: Gebiet (alle Quests einer Zone mit Status), Welt (Fortschritt aller Zonen), Suche (alle Quests, deutsch und englisch), Tagebuch (abgegebene Quests, Sitzungsstatistik mit EP pro Stunde), Planer (Stufenplaner, Merkliste, Vorschläge, Ruf, tägliche Quests, Aufräumen), Erfolge (Meilensteine) und Statistik (Quests pro Tag, Rekorde). Das Gebiet lässt sich filtern.
 - **„Was jetzt?“:** ein Knopf oder eine Taste wählt das sinnvollste nächste Ziel. Dazu Fokusmodus, angeheftete Quests, Symbole an den Zielen, Prozent je Quest und ein Tagesziel.
 - **Questziele in Tooltips** von Gegnern und Gegenständen.
 - **Questgegenstände:** Am Gegenstand steht, für welche Quests er noch gebraucht wird, auch bei deinen anderen Charakteren (`/qk gegenstaende`).

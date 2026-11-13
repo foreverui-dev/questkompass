@@ -430,7 +430,7 @@ QK:Befehl({ "pos", "position" }, function() U:PositionTeilen() end, L"/qk pos �
 QK:Befehl({ "gegner", "enemies" }, function() U:GegnerAnsagen() end, L"/qk gegner – Quest-Gegner in der Nähe ansagen")
 QK:Befehl({ "sitzung", "session" }, function() U:SitzungAusgeben() end, L"/qk sitzung – Sitzungsbericht mit EP pro Stunde und Prognose")
 QK:Befehl({ "tagebuchtext", "journaltext" }, function()
-  if QK.Extras then QK.Extras:TeilenZeigen(false, U:TagebuchText(), L"Tagebuch als Text") end
+  QK.Assistent:Teilen("tagebuch", nil, L"Tagebuch als Text")
 end, L"/qk tagebuchtext – die letzten 50 Einträge zum Kopieren")
 QK.tasten.gegner = function() U:GegnerAnsagen() end
 QK.tasten.position = function() U:PositionTeilen() end

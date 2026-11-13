@@ -46,6 +46,17 @@ Komfort und Barrierefreiheit
 29. Belohnungswahl vorlesen
 30. Neue Assistent-Seite „Unterwegs“ für alle neuen Schalter und drei neue Tastenkürzel (Quest-Gegner ansagen, Position, Sitzungsbericht)
 
+Neues Aussehen (einheitlich mit allen ForeverUI-Addons):
+- Einstellungen und Questbuch in einem Fenster mit Seitenleiste (Questbuch, Darstellung, Funktionen, Zugang, Hilfe), Suche über alle Einstellungen und veränderbarer Größe, die gemerkt wird
+- Questbuch-Reiter stehen in der Seitenleiste, `/qk buch` öffnet und schließt es wie bisher
+- Sechs Akzentfarben (Gold, Klassenfarbe, Eis, Glut, Wald, Silber), Wechsel wirkt sofort; Smaragd wird zu Wald
+- „Seite zurücksetzen“ stellt nur die Einstellungen der offenen Seite zurück
+- Sprachwechsel ohne /reload
+- Neue Hilfeseiten: Neuigkeiten, Discord und Feedback, Fehler melden (Bericht zum Kopieren, Protokoll leeren)
+- Teilen und Übernehmen (Einstellungen, fremder Text, Tagebuch als Text) im Hauptfenster statt eigenem Fenster
+- Flache Flächen mit feinen Rändern statt der alten Rahmen, auch im Kontextmenü der Liste
+- Gamepad: Schultertasten blättern durch die Seitenleiste
+
 Außerdem:
 
 - Questgegenstände: Im Tooltip eines Gegenstands steht, für welche Quests er noch gebraucht wird

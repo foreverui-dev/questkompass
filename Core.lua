@@ -8,7 +8,7 @@ QK.version = (metadaten and metadaten(ADDON, "Version")) or "dev"
 if QK.version:find("@") then QK.version = "dev" end
 -- Stand des Codes: bei jeder Änderung hochzählen. Ein neuer Stand leert das Fehlerprotokoll,
 -- damit dort nur Fehler der aktuellen Version stehen.
-QK.codeStand = "2026-11-13"
+QK.codeStand = "2026-11-13b"
 
 QK.farben = {
   gold   = { 0.95, 0.77, 0.35 },
@@ -45,7 +45,7 @@ QK.STANDARD = {
   gebietPos = nil,
   versteckt = false,
   -- 0.3
-  akzent = "gold",          -- gold | klasse | eis | smaragd
+  akzent = "gold",          -- gold | klasse | eis | glut | wald | silber
   pfeilGross = true,        -- schwebender Fokuspfeil
   pfeilPos = nil,
   autoFokus = false,        -- nächstgelegene Quest automatisch als Fokus
@@ -114,11 +114,15 @@ QK.AKZENTE = {
   gold    = { L"Gold", 0.95, 0.77, 0.35 },
   klasse  = { L"Klassenfarbe" },
   eis     = { "Eis", 0.45, 0.78, 0.98 },
-  smaragd = { L"Smaragd", 0.40, 0.85, 0.55 },
+  glut    = { L"Glut", 0.98, 0.45, 0.25 },
+  wald    = { L"Wald", 0.45, 0.85, 0.50 },
+  silber  = { L"Silber", 0.82, 0.84, 0.88 },
 }
+QK.AKZENT_REIHE = { "gold", "klasse", "eis", "glut", "wald", "silber" }
 
 -- Ändert die Akzentfarbe an Ort und Stelle, damit alle Verweise auf QK.farben.gold mitziehen.
 function QK:AkzentAnwenden()
+  if self.db and self.db.akzent == "smaragd" then self.db.akzent = "wald" end
   local a = self.AKZENTE[self.db and self.db.akzent or "gold"] or self.AKZENTE.gold
   local r, g, b = a[2], a[3], a[4]
   if not r then
@@ -132,6 +136,7 @@ function QK:AkzentAnwenden()
   bl[1], bl[2], bl[3] = r, g * 0.92, b * 0.75
   self.gold = ("|cff%02x%02x%02x"):format(r * 255, g * 255, b * 255)
   self:BarrierefreiAnwenden()
+  if self.UI then self.UI.FarbeAuffrischen() end
 end
 
 ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
--- Questkompass: das Questbuch mit vier Reitern.
+-- Questkompass: das Questbuch, eingebettet ins Hauptfenster (Gruppe „Questbuch“ der Seitenleiste).
 -- Gebiet: alle Quests einer Zone mit Status. Welt: Fortschritt aller Zonen.
 -- Suche: alle Quests nach Namen. Tagebuch: abgegebene Quests und Sitzungsstatistik.
 local _, QK = ...
@@ -11,7 +11,7 @@ local IM_LOG = "|TInterface\\GossipFrame\\ActiveQuestIcon:12:12:0:0|t"
 local OFFEN = "|TInterface\\GossipFrame\\AvailableQuestIcon:12:12:0:0|t"
 
 local fenster, scroll, inhalt, fuss
-local reiterKnoepfe, koepfe = {}, {}
+local koepfe = {}
 local zeilen = {}
 local reiter = "gebiet"
 local gebietID, folgen = nil, true
@@ -29,6 +29,7 @@ local MERK = "|TInterface\\COMMON\\ReputationStar:12:12:0:0:32:32:0:16:0:16|t"
 -- Reiter; weitere Dateien hängen mit G:ReiterHinzufuegen eigene an (Planer, Erfolge).
 local REITER = { { "gebiet", L"Gebiet" }, { "welt", L"Welt" }, { "suche", L"Suche" }, { "tagebuch", L"Tagebuch" } }
 local AUFBAU, KOPFBAU = {}, {}
+G.REITER = REITER
 function G:ReiterHinzufuegen(id, titel, aufbau, kopfBauen)
   REITER[#REITER + 1] = { id, titel }
   AUFBAU[id], KOPFBAU[id] = aufbau, kopfBauen
@@ -232,7 +233,7 @@ function G:AuswahlZeigen(sprechen)
     local an = i == auswahl and z:IsShown()
     z.wahl:SetShown(an)
     if an then
-      z.wahl:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.22)
+      z.wahl:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.14)
       local oben = (i - 1) * ZEILE
       local sicht = scroll:GetHeight() or 300
       local jetzt = scroll.GetVerticalScroll and scroll:GetVerticalScroll() or 0
@@ -261,6 +262,16 @@ function G:ReiterWechseln(schritt)
   for i, r in ipairs(REITER) do if r[1] == reiter then pos = i end end
   pos = ((pos - 1 + schritt) % #REITER) + 1
   G:Reiter(REITER[pos][1])
+end
+
+-- Steuerung im Hauptfenster: hoch/runter wählen, ok löst aus; die Schultertasten blättern
+-- über die Seitenleiste, links/rechts bleiben dem Spiel.
+function G.Steuern(aktion)
+  if aktion == "hoch" then G:Bewegen(-1)
+  elseif aktion == "runter" then G:Bewegen(1)
+  elseif aktion == "ok" then G:Ausloesen()
+  else return false end
+  return true
 end
 
 function G:Fenster() return fenster end
@@ -383,22 +394,14 @@ end
 
 function G:Aktualisieren()
   if not fenster or not fenster:IsShown() then return end
-  fenster:SetScale(QK:Groesse())
-  fenster:SetBackdropColor(0.06, 0.06, 0.08, QK:Deckkraft(0.95))
-  for name, k in pairs(koepfe) do k:SetShown(name == reiter) end
-  for name, b in pairs(reiterKnoepfe) do
-    b.text:SetTextColor(unpack(name == reiter and QK.farben.gold or QK.farben.grau))
-    b.strich:SetShown(name == reiter)
-    b.strich:SetColorTexture(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 1)
-  end
   if not AUFBAU[reiter] then reiter = "gebiet" end
+  for name, k in pairs(koepfe) do k:SetShown(name == reiter) end
   AUFBAU[reiter]()
 end
 
 function G:GebietWaehlen(id)
   gebietID, folgen = id, id == QK:AktuellesGebiet()
-  reiter = "gebiet"
-  G:Aktualisieren()
+  G:Reiter("gebiet")
 end
 
 local function Blaettern(richtung)
@@ -414,11 +417,7 @@ end
 -- Fenster
 ---------------------------------------------------------------------------
 local function Knopf(eltern, text, breite, beiKlick)
-  local b = CreateFrame("Button", nil, eltern, "UIPanelButtonTemplate")
-  b:SetSize(breite, 20)
-  b:SetText(text)
-  b:SetScript("OnClick", beiKlick)
-  return b
+  return QK.UI.Knopf(eltern, text, breite, beiKlick)
 end
 
 local function Balken(eltern, y)
@@ -439,8 +438,8 @@ end
 
 function G.KopfBereich(name)
   local k = CreateFrame("Frame", nil, fenster)
-  k:SetPoint("TOPLEFT", 14, -62)
-  k:SetPoint("TOPRIGHT", -14, -62)
+  k:SetPoint("TOPLEFT", 16, -14)
+  k:SetPoint("TOPRIGHT", -16, -14)
   k:SetHeight(64)
   k:Hide()
   koepfe[name] = k
@@ -448,56 +447,10 @@ function G.KopfBereich(name)
 end
 
 local function Erstellen()
-  fenster = CreateFrame("Frame", "QuestkompassGebiet", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-  fenster:SetSize(490, 520)
-  fenster:SetFrameStrata("DIALOG")
-  fenster:SetClampedToScreen(true)
-  fenster:SetMovable(true)
-  fenster:EnableMouse(true)
-  fenster:RegisterForDrag("LeftButton")
-  fenster:SetScript("OnDragStart", fenster.StartMoving)
-  fenster:SetScript("OnDragStop", function(self)
-    self:StopMovingOrSizing()
-    local p, _, rp, x, y = self:GetPoint()
-    QK.db.gebietPos = { p, rp, x, y }
-  end)
-  fenster:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-  fenster:SetBackdropColor(0.06, 0.06, 0.08, 0.95)
-  fenster:SetBackdropBorderColor(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.35)
-  local p = QK.db.gebietPos
-  if p then fenster:SetPoint(p[1], UIParent, p[2], p[3], p[4]) else fenster:SetPoint("CENTER") end
-  tinsert(UISpecialFrames, "QuestkompassGebiet")
-
-  local schliessen = CreateFrame("Button", nil, fenster, "UIPanelCloseButton")
-  schliessen:SetPoint("TOPRIGHT", 2, 2)
-  local kopf = fenster:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  kopf:SetPoint("TOPLEFT", 14, -12)
-  kopf:SetText("QUESTBUCH")
-  kopf:SetTextColor(unpack(QK.farben.gold))
-
-  -- Reiter
-  local x = 14
-  for _, r in ipairs(REITER) do
-    local b = CreateFrame("Button", nil, fenster)
-    b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    b.text:SetPoint("LEFT")
-    b.text:SetText(L(r[2]))
-    b:SetSize((b.text:GetStringWidth() or 50) + 4, 22)
-    b:SetPoint("TOPLEFT", x, -30)
-    b.strich = b:CreateTexture(nil, "ARTWORK")
-    b.strich:SetPoint("BOTTOMLEFT", 0, 0)
-    b.strich:SetPoint("BOTTOMRIGHT", -4, 0)
-    b.strich:SetHeight(2)
-    b:SetScript("OnClick", function()
-      reiter = r[1]
-      auswahl = 0
-      if r[1] == "welt" then weltCache = nil end
-      G:Aktualisieren()
-      if r[1] == "suche" and suchFeld then suchFeld:SetFocus() end
-    end)
-    reiterKnoepfe[r[1]] = b
-    x = x + (b.text:GetStringWidth() or 50) + 14
-  end
+  -- Schlichter Rahmen ohne eigenen Titel und Rand: das Hauptfenster bettet ihn in seinen Inhaltskasten.
+  fenster = CreateFrame("Frame", "QuestkompassGebiet", UIParent)
+  fenster:SetSize(560, 520)
+  fenster:Hide()
   for _, r in ipairs(REITER) do
     if KOPFBAU[r[1]] then KOPFBAU[r[1]](G.KopfBereich(r[1])) end
   end
@@ -581,7 +534,7 @@ local function Erstellen()
   buchStatistik:SetSpacing(3)
 
   scroll = CreateFrame("ScrollFrame", "QuestkompassGebietScroll", fenster, "UIPanelScrollFrameTemplate")
-  scroll:SetPoint("TOPLEFT", 10, -132)
+  scroll:SetPoint("TOPLEFT", 12, -84)
   scroll:SetPoint("BOTTOMRIGHT", -30, 30)
   inhalt = CreateFrame("Frame", nil, scroll)
   inhalt:SetSize(440, 1)
@@ -589,13 +542,21 @@ local function Erstellen()
   scroll:SetScript("OnSizeChanged", function(_, w) inhalt:SetWidth(w) end)
 
   fuss = fenster:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-  fuss:SetPoint("BOTTOMLEFT", 14, 10)
-  fuss:SetPoint("BOTTOMRIGHT", -14, 10)
+  fuss:SetPoint("BOTTOMLEFT", 16, 10)
+  fuss:SetPoint("BOTTOMRIGHT", -16, 10)
   fuss:SetJustifyH("LEFT")
   fuss:SetText((L"Daten: Blizzard Entertainment, Stand %s · foreverui.de"):format(QK.datenStand or "?"))
 
-  fenster:SetScript("OnShow", function() QK:Sicher("Questbuch", G.Aktualisieren, G) end)
-  fenster:Hide()
+end
+
+-- Öffnet einen Reiter im Hauptfenster (oder frischt ihn auf, wenn er schon offen ist)
+local function Oeffnen(name)
+  if not fenster then Erstellen() end
+  if not AUFBAU[name] then name = "gebiet" end
+  if reiter ~= name then auswahl = 0 end
+  reiter = name
+  if name == "welt" then weltCache = nil end
+  QK.Assistent:Bereich("buch:" .. name)
 end
 
 function G:Zeigen(name)
@@ -610,23 +571,41 @@ function G:Zeigen(name)
   else
     gebietID, folgen = nil, true
   end
-  reiter = "gebiet"
-  fenster:Show()
-  QK:Sicher("Questbuch", G.Aktualisieren, G)
+  Oeffnen("gebiet")
 end
 
 function G:Reiter(name, text)
   if not fenster then Erstellen() end
-  if reiter ~= name then auswahl = 0 end
-  reiter = name
-  if name == "welt" then weltCache = nil end
   if name == "suche" and text and text ~= "" then suchFeld:SetText(text); suchText = text end
-  fenster:Show()
-  QK:Sicher("Questbuch", G.Aktualisieren, G)
+  Oeffnen(name)
 end
 
+function G:Offen() return QK.Assistent:BereichOffen("buch:") end
+
 function G:Umschalten()
-  if fenster and fenster:IsShown() then fenster:Hide() else G:Zeigen() end
+  if G:Offen() then QK.Assistent:Schliessen() else G:Zeigen() end
+end
+
+-- Nach einem Sprachwechsel: der alte Rahmen bleibt ungenutzt liegen, beim nächsten Öffnen entsteht ein neuer.
+function G:Neubauen()
+  fenster, scroll, inhalt, fuss, suchFeld, filterKnopf = nil, nil, nil, nil, nil, nil
+  wipe(koepfe); wipe(zeilen)
+  auswahl = 0
+end
+
+-- Jeden Reiter (auch die von Planer, Erfolge, Statistik) als Bereich im Hauptfenster anmelden
+local function Anmelden()
+  for _, r in ipairs(REITER) do
+    local id = r[1]
+    QK.Assistent:BereichAnmelden("buch:" .. id, L(r[2]),
+      function() if not fenster then Erstellen() end return fenster end,
+      function()
+        if reiter ~= id then auswahl = 0; if id == "welt" then weltCache = nil end end
+        reiter = id
+        QK:Sicher("Questbuch", G.Aktualisieren, G)
+      end,
+      G.Steuern)
+  end
 end
 
 ---------------------------------------------------------------------------
@@ -642,11 +621,12 @@ local function EPMessen()
 end
 
 function G:Start()
+  Anmelden()
   sitzung.start = GetTime()
   EPMessen()
   local geplant = false
   local function planen()
-    if geplant or not fenster or not fenster:IsShown() then return end
+    if geplant or not fenster or not G:Offen() then return end
     geplant = true
     C_Timer.After(0.5, function() geplant = false; QK:Sicher("Questbuch", G.Aktualisieren, G) end)
   end
@@ -676,5 +656,5 @@ function G:Start()
 end
 
 function G:Anwenden()
-  if fenster and fenster:IsShown() then G:Aktualisieren() end
+  if fenster and G:Offen() then G:Aktualisieren() end
 end

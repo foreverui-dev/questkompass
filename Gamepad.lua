@@ -1,12 +1,12 @@
--- Questkompass: Steuerung von Questbuch und Assistent mit Gamepad oder Pfeiltasten.
+-- Questkompass: Steuerung des Hauptfensters (Einstellungen, Questbuch, Assistent) mit Gamepad oder Pfeiltasten.
 -- Steuerkreuz/Pfeile wählen aus, A/Eingabe bestätigt, B/Escape schließt,
--- Schultertasten oder links/rechts wechseln Reiter bzw. Seiten.
+-- die Schultertasten blättern durch die Seitenleiste (im Assistenten: Seiten).
 local _, QK = ...
 local GP = QK:Modul("Gamepad")
 
 local PAD = {
   PADDUP = "hoch", PADDDOWN = "runter", PADDLEFT = "links", PADDRIGHT = "rechts",
-  PAD1 = "ok", PAD2 = "zurueck", PADLSHOULDER = "links", PADRSHOULDER = "rechts",
+  PAD1 = "ok", PAD2 = "zurueck", PADLSHOULDER = "vorher", PADRSHOULDER = "nachher",
 }
 local TASTATUR = { UP = "hoch", DOWN = "runter", LEFT = "links", RIGHT = "rechts", ENTER = "ok" }
 
@@ -14,7 +14,7 @@ local function Weitergeben(frame, an, funktion)
   if frame[funktion] and not InCombatLockdown() then pcall(frame[funktion], frame, an) end
 end
 
--- Verbindet ein Fenster mit einer Funktion handler(aktion) -> true, wenn behandelt
+-- Verbindet ein Fenster mit einer Funktion handler(aktion, quelle) -> true, wenn behandelt
 function GP:Anmelden(frame, handler)
   if not frame or frame.questkompassGamepad then return end
   frame.questkompassGamepad = true
@@ -29,7 +29,7 @@ function GP:Anmelden(frame, handler)
   pcall(frame.SetScript, frame, "OnGamePadButtonDown", function(self, taste)
     local aktion = PAD[taste]
     local ok, behandelt = false, false
-    if aktion then ok, behandelt = pcall(handler, aktion) end
+    if aktion then ok, behandelt = pcall(handler, aktion, "pad") end
     Weitergeben(self, not (ok and behandelt), "SetPropagateGamePadInput")
   end)
   frame:SetScript("OnKeyDown", function(self, taste)
@@ -44,24 +44,10 @@ function GP:Anmelden(frame, handler)
   if frame:IsShown() then an(frame) end
 end
 
-local function Questbuch(aktion)
-  local G = QK.Gebiet
-  if aktion == "hoch" then G:Bewegen(-1)
-  elseif aktion == "runter" then G:Bewegen(1)
-  elseif aktion == "links" then G:ReiterWechseln(-1)
-  elseif aktion == "rechts" then G:ReiterWechseln(1)
-  elseif aktion == "ok" then G:Ausloesen()
-  elseif aktion == "zurueck" then G:Fenster():Hide()
-  else return false end
-  return true
-end
-
-local function Assistent(aktion) return QK.Assistent:Steuern(aktion) end
+local function Assistent(aktion, quelle) return QK.Assistent:Steuern(aktion, quelle) end
 
 function GP:Start()
-  -- Fenster entstehen erst beim ersten Öffnen; dann verbinden.
-  hooksecurefunc(QK.Gebiet, "Reiter", function() GP:Anmelden(QK.Gebiet:Fenster(), Questbuch) end)
-  hooksecurefunc(QK.Gebiet, "Zeigen", function() GP:Anmelden(QK.Gebiet:Fenster(), Questbuch) end)
+  -- Das Hauptfenster entsteht erst beim ersten Öffnen; dann verbinden. Das Questbuch steckt darin.
   hooksecurefunc(QK.Assistent, "Oeffnen", function() GP:Anmelden(QuestkompassAssistent, Assistent) end)
   if QuestkompassAssistent then GP:Anmelden(QuestkompassAssistent, Assistent) end
 end

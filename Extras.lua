@@ -208,59 +208,10 @@ function X:Import(text)
   return n > 0, n
 end
 
-local teilenFenster
+-- Teilen läuft über den Bereich „Teilen und Übernehmen“ im Hauptfenster.
 function X:TeilenZeigen(mitText, eigenerText, eigenerTitel)
-  if not teilenFenster then
-    local f = CreateFrame("Frame", "QuestkompassTeilen", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-    f:SetSize(480, 130)
-    f:SetPoint("CENTER", 0, 120)
-    f:SetFrameStrata("DIALOG")
-    f:EnableMouse(true)
-    f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-    f:SetBackdropColor(0.06, 0.06, 0.08, 0.96)
-    f:SetBackdropBorderColor(QK.farben.gold[1], QK.farben.gold[2], QK.farben.gold[3], 0.45)
-    tinsert(UISpecialFrames, "QuestkompassTeilen")
-    f.titel = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    f.titel:SetPoint("TOPLEFT", 14, -12)
-    f.titel:SetText(L"Einstellungen teilen")
-    f.hinweis = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    f.hinweis:SetPoint("TOPLEFT", f.titel, "BOTTOMLEFT", 0, -4)
-    f.hinweis:SetPoint("RIGHT", -14, 0)
-    f.hinweis:SetJustifyH("LEFT")
-    f.hinweis:SetText(L"Text mit Strg+C kopieren und weitergeben, oder fremden Text einfügen und übernehmen.")
-    local e = CreateFrame("EditBox", "QuestkompassTeilenText", f, "InputBoxTemplate")
-    e:SetAutoFocus(false)
-    e:SetHeight(22)
-    e:SetPoint("TOPLEFT", 20, -54)
-    e:SetPoint("TOPRIGHT", -14, -54)
-    if e.SetMaxLetters then e:SetMaxLetters(0) end
-    e:SetScript("OnEscapePressed", function() f:Hide() end)
-    f.text = e
-    local ok = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    ok:SetSize(120, 22)
-    ok:SetPoint("BOTTOMRIGHT", f, "BOTTOM", -4, 12)
-    ok:SetText(L"Übernehmen")
-    f.ok = ok
-    ok:SetScript("OnClick", function()
-      local geklappt, n = X:Import(e:GetText())
-      if geklappt then QK:Meldung(L"%d Einstellungen übernommen.", n); f:Hide()
-      else QK:Meldung(L"Dieser Text enthält keine Questkompass-Einstellungen.") end
-    end)
-    local zu = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    zu:SetSize(120, 22)
-    zu:SetPoint("BOTTOMLEFT", f, "BOTTOM", 4, 12)
-    zu:SetText(L"Schließen")
-    zu:SetScript("OnClick", function() f:Hide() end)
-    teilenFenster = f
-  end
-  teilenFenster:SetScale(QK:Groesse())
-  teilenFenster.titel:SetText(eigenerTitel or L"Einstellungen teilen")
-  teilenFenster.hinweis:SetText(eigenerText and L"Text mit Strg+C kopieren." or L"Text mit Strg+C kopieren und weitergeben, oder fremden Text einfügen und übernehmen.")
-  teilenFenster.ok:SetShown(not eigenerText)
-  teilenFenster.text:SetText(eigenerText or (mitText and X:Export()) or "")
-  teilenFenster:Show()
-  teilenFenster.text:SetFocus()
-  if (mitText or eigenerText) and teilenFenster.text.HighlightText then teilenFenster.text:HighlightText() end
+  if eigenerText then QK.Assistent:Teilen("text", eigenerText, eigenerTitel)
+  else QK.Assistent:Teilen(mitText and "export" or "import") end
 end
 
 ---------------------------------------------------------------------------

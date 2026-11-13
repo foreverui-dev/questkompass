@@ -67,6 +67,8 @@ local function Durchlauf(modern)
         SetAttribute = function(s, k, v) s.attribute = s.attribute or {}; s.attribute[k] = v end,
         EnableMouseWheel = function(s, v) s.mausrad = v end,
         SetVertexColor = function() end,
+        SetParent = function(s, p) s.eltern = p end,
+        GetParent = function(s) return s.eltern end,
       })[k]
       if f then return f end
       if type(k) == "string" and k:match("^%u") then return function() end end
@@ -474,11 +476,15 @@ local function Durchlauf(modern)
   fenster.skripte.OnKeyDown(fenster, "ENTER")
   pruefe(gedrueckt == "ok", "Gamepad und Tasten im Questbuch")
   QK.Gebiet:Reiter("welt")
-  QK.Gebiet:Bewegen(1)
-  QK.Gebiet:Ausloesen()
+  pruefe(QK.Gebiet:Offen() and fenster:GetParent() == QuestkompassAssistent.kasten, "Questbuch steckt im Hauptfenster")
+  pruefe(QK.Assistent:Steuern("runter", "pad") and QK.Assistent:Steuern("ok", "pad") and not QK.Assistent:Steuern("rechts"), "Questbuch im Hauptfenster mit Gamepad")
+  QK.Gebiet:Reiter("welt")
   QK.Gebiet:ReiterWechseln(1)
+  pruefe(QK.Assistent:BereichOffen("buch:suche"), "Reiter wechseln über die Seitenleiste")
+  QK.Gebiet:Umschalten()
+  pruefe(not QK.Gebiet:Offen(), "Questbuch schließt mit /qk buch")
   QK.Assistent:Oeffnen(3, true)
-  pruefe(QK.Assistent:Steuern("runter") and QK.Assistent:Steuern("ok") and QK.Assistent:Steuern("rechts"), "Assistent mit Gamepad")
+  pruefe(QK.Assistent:Steuern("runter") and QK.Assistent:Steuern("ok") and QK.Assistent:Steuern("nachher", "pad"), "Assistent mit Gamepad")
   QK.Assistent:Schliessen()
   -- Twinks
   QK.Twinks:Einlesen()

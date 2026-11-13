@@ -1,48 +1,47 @@
--- Questkompass: Einrichtungsassistent. Derselbe Dialog dient später als Einstellungsfenster.
+-- Questkompass: Hauptfenster im ForeverUI-Design. Beim ersten Start führt es als Assistent
+-- Schritt für Schritt durch die Einstellungen; danach ist es das Einstellungsfenster mit
+-- Seitenleiste, Suche und eingebetteten Bereichen (Questbuch, Teilen, Fehler melden).
 local ADDON, QK = ...
 local A = QK:Modul("Assistent")
 local L = QK.L
+local UI = QK.UI
+
+A.DISCORD = "https://discord.gg/Sh8zyYUKRX"
+A.ASSISTENT_SEITEN = 12              -- Seiten des Einrichtungsassistenten, danach nur Einstellungen
 
 local fenster, seitenTitel, punkte, zurueck, weiter, inhalt
 local seiten, seite, alsEinstellungen = {}, 1, false
 local auswahl, markierung = 0, nil   -- Gamepad/Tastatur
+local navi = {}                      -- Knöpfe der Seitenleiste
+local bereiche, bereich = {}, nil    -- eingebettete Bereiche und der offene
 local GOLD = QK.farben.gold
+A.bereiche = bereiche
+local goldTexte = {}                 -- { fontstring, Text mit |cfff2c45a }
+local Gold = UI.Gold
 
 ---------------------------------------------------------------------------
 -- Bausteine
 ---------------------------------------------------------------------------
-local function Rahmen(f, alpha, rand)
-  f.hg = f.hg or f:CreateTexture(nil, "BACKGROUND")
-  f.hg:SetAllPoints()
-  f.hg:SetColorTexture(0.06, 0.06, 0.08, alpha)
-  f.rand = f.rand or {}
-  local function kante(i, p1, p2, w, h)
-    local t = f.rand[i] or f:CreateTexture(nil, "BORDER")
-    t:ClearAllPoints()
-    t:SetPoint(p1); t:SetPoint(p2)
-    if w then t:SetWidth(w) else t:SetHeight(h) end
-    f.rand[i] = t
-  end
-  kante(1, "TOPLEFT", "TOPRIGHT", nil, 1)
-  kante(2, "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1)
-  kante(3, "TOPLEFT", "BOTTOMLEFT", 1)
-  kante(4, "TOPRIGHT", "BOTTOMRIGHT", 1)
-  A.RandFarbe(f, rand)
-end
-function A.RandFarbe(f, c)
-  for _, t in ipairs(f.rand) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 1) end
-end
+local Rahmen = UI.Rahmen
+A.RandFarbe = UI.RandFarbe
 
+local bauSeite                       -- Seite, die gerade gebaut wird (für die Suche)
 local function Text(eltern, schrift, text, breite)
+  if bauSeite and type(text) == "string" and text ~= "" then bauSeite.such[#bauSeite.such + 1] = text end
   local t = eltern:CreateFontString(nil, "OVERLAY", schrift)
   t:SetJustifyH("LEFT")
   t:SetJustifyV("TOP")
   if breite then t:SetWidth(breite) end
   t:SetText(text)
+  if type(text) == "string" and text:find("|cfff2c45a", 1, true) then goldTexte[#goldTexte + 1] = { t, text } end
   return t
 end
 
--- Auswahlkarte: Titel, Beschreibung, gold umrandet, wenn gewählt.
+function A:FarbeAuffrischen()
+  for _, e in ipairs(goldTexte) do e[1]:SetText((e[2]:gsub("|cfff2c45a", QK.gold))) end
+end
+
+-- Auswahlkarte: Titel, Beschreibung, in Akzentfarbe umrandet, wenn gewählt.
 local function Karte(eltern, titel, text, breite, hoehe, istGewaehlt, waehlen)
   local k = CreateFrame("Button", nil, eltern)
   k:SetSize(breite, hoehe)
@@ -54,16 +53,17 @@ local function Karte(eltern, titel, text, breite, hoehe, istGewaehlt, waehlen)
   k.text:SetTextColor(0.75, 0.75, 0.75)
   local hl = k:CreateTexture(nil, "HIGHLIGHT")
   hl:SetAllPoints()
-  hl:SetColorTexture(1, 1, 1, 0.04)
+  hl:SetColorTexture(1, 1, 1, 0.05)
   k.Auffrischen = function()
     local an = istGewaehlt()
     A.RandFarbe(k, an and { GOLD[1], GOLD[2], GOLD[3], 0.9 } or { 1, 1, 1, 0.12 })
-    k.hg:SetColorTexture(an and 0.16 or 0.06, an and 0.13 or 0.06, an and 0.07 or 0.08, 0.7)
+    if an then k.hg:SetColorTexture(GOLD[1] * 0.17, GOLD[2] * 0.17, GOLD[3] * 0.17, 0.7)
+    else k.hg:SetColorTexture(0.06, 0.06, 0.08, 0.7) end
   end
   k:SetScript("OnClick", function()
     waehlen()
-    A:Auffrischen()
     QK:Anwenden()
+    A:Auffrischen()
   end)
   k.knopf = k
   k.vorlesen = titel .. ". " .. (text or "")
@@ -81,6 +81,7 @@ local function Schalter(eltern, titel, text, schluessel, nachher)
   l:SetPoint("TOPLEFT", 28, -3)
   local d = Text(f, "GameFontDisableSmall", text or "", 205)
   d:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -2)
+  if bauSeite then bauSeite.schluessel[#bauSeite.schluessel + 1] = schluessel end
   c:SetScript("OnClick", function(self)
     QK.db[schluessel] = self:GetChecked() and true or false
     if nachher then nachher(QK.db[schluessel]) end
@@ -107,7 +108,11 @@ local function NeueSeite(titel, bauen)
   s:SetAllPoints()
   s.titel = titel
   s.elemente = {}
+  s.such = { titel }
+  s.schluessel = {}
+  bauSeite = s
   bauen(s, function(e) s.elemente[#s.elemente + 1] = e; return e end)
+  bauSeite = nil
   s:Hide()
   seiten[#seiten + 1] = s
 end
@@ -170,14 +175,17 @@ local function SeitenBauen()
     end
     local a = Text(s, "GameFontNormal", L"Akzentfarbe", 200)
     a:SetPoint("TOPLEFT", 0, -106)
-    for i, id in ipairs({ "gold", "klasse", "eis", "smaragd" }) do
-      local k = merke(Karte(s, QK.AKZENTE[id][1], "", 120, 34,
+    for i, id in ipairs(QK.AKZENT_REIHE) do
+      local k = merke(Karte(s, QK.AKZENTE[id][1], "", 80, 30,
         function() return QK.db.akzent == id end,
-        function() QK.db.akzent = id end))
-      k:SetPoint("TOPLEFT", (i - 1) * 127, -124)
+        function() QK.db.akzent = id; QK:AkzentAnwenden() end))
+      k:SetPoint("TOPLEFT", (i - 1) * 85, -124)
+      k.titel:ClearAllPoints()
+      k.titel:SetPoint("LEFT", 8, 0)
+      k.titel:SetWidth(52)
       local farbe = k:CreateTexture(nil, "ARTWORK")
       farbe:SetSize(10, 10)
-      farbe:SetPoint("RIGHT", -10, 0)
+      farbe:SetPoint("RIGHT", -8, 0)
       local alt = k.Auffrischen
       k.Auffrischen = function()
         local merk = QK.db.akzent
@@ -354,7 +362,7 @@ local function SeitenBauen()
     teilen:SetSize(200, 22)
     teilen:SetText(L"Einstellungen teilen")
     teilen:SetPoint("TOPLEFT", 255, -210)
-    teilen:SetScript("OnClick", function() QK.Extras:TeilenZeigen(true) end)
+    teilen:SetScript("OnClick", function() A:Teilen("export") end)
     local tipp = Text(s, "GameFontDisableSmall", L"Mit „Einstellungen teilen“ gibst du deine Einstellungen als Text weiter, z. B. an Freunde oder deinen Twink.", 500)
     tipp:SetPoint("TOPLEFT", 0, -248)
   end)
@@ -403,7 +411,7 @@ local function SeitenBauen()
         function()
           QK.db.sprache = e[1]
           QK:SpracheAnwenden()
-          QK:Meldung(L"Sprache geändert. Ganz wirkt sie nach /reload.")
+          C_Timer.After(0, function() A:Neubauen() end)
         end))
       k:SetPoint("TOPLEFT", 90 + (i - 1) * 130, -230)
     end
@@ -419,7 +427,69 @@ local function SeitenBauen()
       .. L"|cfff2c45aZahnrad|r oder |cfff2c45a/qk einstellungen|r: hierher zurück.\n\n"
       .. L"Viel Spaß in Azeroth! Ideen und Wünsche gern über foreverui.de.")
   end)
+
+  -- Nur in den Einstellungen (Hilfe)
+  NeueSeite(L"Neuigkeiten", function(s)
+    Absatz(s, L"|cfff2c45aNeu in Questkompass 1.1|r\n\n"
+      .. L"• Neues Aussehen wie bei allen ForeverUI-Addons: ein Fenster mit Seitenleiste, Suche und veränderbarer Größe. Das Questbuch steht jetzt auch hier.\n"
+      .. L"• Symbol an Quest-Gegnern und Questgegenstände im Tooltip, auch für deine Twinks.\n"
+      .. L"• Leichen-Pfeil, Wegpunkte mit der Gruppe teilen, Händler-, Bank- und Verkaufshinweise.\n"
+      .. L"• Sitzungsbericht mit Stufenprognose (|cfff2c45a/qk sitzung|r), Quest-Gegner ansagen (|cfff2c45a/qk gegner|r).\n"
+      .. L"• Sechs Akzentfarben, „Seite zurücksetzen“ und Sprachwechsel ohne /reload.\n\n"
+      .. L"Die ganze Liste steht im Changelog auf CurseForge und Wago.")
+  end)
+
+  NeueSeite(L"Discord und Feedback", function(s, merke)
+    Absatz(s, L"Fragen, Ideen oder einen Fehler gefunden? Schau im Discord von ForeverUI vorbei. "
+      .. L"Dort lesen wir alles und antworten gern.\n\nLink kopieren (Klick markiert, Strg+C kopiert):")
+    local feld = CreateFrame("EditBox", nil, s, "InputBoxTemplate")
+    feld:SetAutoFocus(false)
+    feld:SetSize(320, 22)
+    feld:SetPoint("TOPLEFT", 6, -96)
+    UI.Schreibschutz(feld)
+    UI.Lesetext(feld, A.DISCORD)
+    feld:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    local t = Text(s, "GameFontDisableSmall", L"Bei Fehlern hilft der Bereich „Fehler melden“: Er sammelt alles, was wir zum Nachstellen brauchen.", 500)
+    t:SetPoint("TOPLEFT", 0, -134)
+  end)
 end
+
+
+local function SeitenErgaenzen()
+  -- Werte, die nicht über Schalter laufen, für „Seite zurücksetzen“
+  local extra = { [3] = { "stil", "anzahl", "akzent", "skalierung", "breite" }, [4] = { "lage", "pos" },
+    [5] = { "sortierung", "modus" }, [9] = { "tagesziel" }, [11] = { "sprache" } }
+  for nr, liste in pairs(extra) do
+    if seiten[nr] then
+      for _, k in ipairs(liste) do seiten[nr].schluessel[#seiten[nr].schluessel + 1] = k end
+    end
+  end
+end
+
+function A:LetzteSeite() return alsEinstellungen and #seiten or A.ASSISTENT_SEITEN end
+
+local function standardKopie(v)
+  if type(v) ~= "table" then return v end
+  local n = {}
+  for k, w in pairs(v) do n[k] = standardKopie(w) end
+  return n
+end
+
+-- Einstellungen der offenen Seite auf den Standard
+function A:SeiteZuruecksetzen(nr)
+  local s = seiten[nr or seite]
+  if not s or #s.schluessel == 0 then return 0 end
+  for _, k in ipairs(s.schluessel) do
+    if k:sub(1, 1) ~= "_" then QK.db[k] = standardKopie(QK.STANDARD[k]) end
+  end
+  QK:AkzentAnwenden()
+  QK:SpracheAnwenden()
+  QK:Anwenden()
+  A:Auffrischen()
+  QK:Meldung(L"Seite „%s“ auf Standard zurückgesetzt.", L(s.titel))
+  return #s.schluessel
+end
+A.Seiten = seiten
 
 ---------------------------------------------------------------------------
 -- Fenster
@@ -450,7 +520,7 @@ end
 local function Waehlbar()
   local liste = {}
   for _, e in ipairs(seiten[seite].elemente) do
-    if e.knopf then liste[#liste + 1] = e end
+    if e.knopf and e:IsShown() then liste[#liste + 1] = e end
   end
   return liste
 end
@@ -477,10 +547,28 @@ local function Markieren()
   markierung:Show()
 end
 
--- Gamepad/Tastatur: hoch, runter, links, rechts, ok, zurueck
-function A:Steuern(aktion)
+-- Gamepad/Tastatur: hoch, runter, links, rechts, ok, zurueck, vorher, nachher (Schultertasten)
+-- quelle: "pad" für das Gamepad, sonst Tastatur
+function A:Steuern(aktion, quelle)
   if not fenster or not fenster:IsShown() then return false end
+  if aktion == "vorher" or aktion == "nachher" then
+    if alsEinstellungen then A:NaviBlaettern(aktion == "vorher" and -1 or 1); return true end
+    aktion = aktion == "vorher" and "links" or "rechts"
+  end
+  -- Eingebetteter Bereich (Questbuch ...): er steuert selbst, Escape/B schließt
+  if alsEinstellungen and bereich then
+    if aktion == "zurueck" then A:Schliessen(); return true end
+    local b = bereiche[bereich]
+    if b and b.steuern then
+      local ok, behandelt = pcall(b.steuern, aktion)
+      return ok and behandelt and true or false
+    end
+    return false
+  end
+  -- In den Einstellungen wird über die Seitenleiste geblättert: links/rechts gehören dem Spiel
+  if alsEinstellungen and (aktion == "links" or aktion == "rechts") then return false end
   local liste = Waehlbar()
+  if aktion == "ok" and not liste[auswahl] and alsEinstellungen then return false end
   if aktion == "hoch" or aktion == "runter" then
     if #liste == 0 then return true end
     auswahl = auswahl + (aktion == "hoch" and -1 or 1)
@@ -492,7 +580,7 @@ function A:Steuern(aktion)
   elseif aktion == "links" then
     if seite > 1 then seite = seite - 1; A:Auffrischen() end
   elseif aktion == "rechts" then
-    if seite < #seiten then seite = seite + 1; A:Auffrischen() else A:Schliessen() end
+    if seite < A:LetzteSeite() then seite = seite + 1; A:Auffrischen() end
   elseif aktion == "ok" then
     local e = liste[auswahl]
     if e then e.knopf:Click() else weiter:Click() end
@@ -508,7 +596,39 @@ end
 function A:Auffrischen()
   if not fenster then return end
   fenster:SetScale(QK:Groesse())
-  fenster.hg:SetColorTexture(0.06, 0.06, 0.08, QK:Deckkraft(0.96))
+  fenster.hg:SetColorTexture(0.06, 0.06, 0.08, QK:Deckkraft(0.99))
+  A:FarbeAuffrischen()
+  local offen = alsEinstellungen and bereich and bereiche[bereich] or nil
+  for key, b in pairs(bereiche) do
+    if b.rahmen and b.rahmen ~= (offen and offen.rahmen) then b.rahmen:Hide() end
+  end
+  local markiert = offen and bereich or seite
+  for _, k in ipairs(navi) do
+    local an = k.nr == markiert
+    k.hg:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], an and 0.14 or 0)
+    k.strich:SetShown(an)
+    if an then k.text:SetTextColor(GOLD[1], GOLD[2], GOLD[3]) else k.text:SetTextColor(0.85, 0.85, 0.85) end
+  end
+  if fenster.zuruecksetzen then
+    fenster.zuruecksetzen:SetShown(alsEinstellungen and not offen and seiten[seite] and #seiten[seite].schluessel > 0 or false)
+  end
+  if offen then
+    for _, s in ipairs(seiten) do s:Hide() end
+    if markierung then markierung:Hide() end
+    if A.letzteSeite ~= bereich then A.letzteSeite = bereich; QK:Sprechen(offen.titel) end
+    seitenTitel:SetText(offen.titel)
+    local f = offen.holen()
+    A:Einbetten(f)
+    offen.rahmen = f
+    f:Show()
+    offen.zeichnen()
+    zurueck:Hide(); weiter:Hide()
+    fenster.fertig:Show()
+    fenster.fertig:SetText(L"Schließen")
+    fenster.fertig:ClearAllPoints()
+    fenster.fertig:SetPoint("BOTTOMRIGHT", fenster, "BOTTOMRIGHT", -24, 12)
+    return
+  end
   for i, s in ipairs(seiten) do
     s:SetShown(i == seite)
     if i == seite then for _, e in ipairs(s.elemente) do if e.Auffrischen then e.Auffrischen() end end end
@@ -523,21 +643,403 @@ function A:Auffrischen()
     p.t:SetColorTexture(i == seite and GOLD[1] or 0.4, i == seite and GOLD[2] or 0.4, i == seite and GOLD[3] or 0.4, 1)
     p:SetSize(i == seite and 18 or 8, 4)
   end
+  if alsEinstellungen then
+    zurueck:Hide(); weiter:Hide()
+    fenster.fertig:Show()
+    fenster.fertig:SetText(L"Schließen")
+    fenster.fertig:ClearAllPoints()
+    fenster.fertig:SetPoint("BOTTOMRIGHT", fenster, "BOTTOMRIGHT", -24, 12)
+    return
+  end
+  weiter:Show()
+  fenster.fertig:SetText(L"Fertig")
   zurueck:SetShown(seite > 1)
-  fenster.fertig:SetShown(seite < #seiten)
+  fenster.fertig:SetShown(seite < A:LetzteSeite())
   A:Anordnen()
-  if seite == #seiten then
+  if seite == A:LetzteSeite() then
     weiter:SetText(L"Fertig")
-  elseif seite == 1 and not alsEinstellungen then
+  elseif seite == 1 then
     weiter:SetText(L"Los geht’s")
   else
     weiter:SetText(L"Weiter")
   end
 end
 
+---------------------------------------------------------------------------
+-- Seitenleiste mit Gruppen, Kasten für den Inhalt
+---------------------------------------------------------------------------
+-- { Gruppe, { Seitennummer oder Bereich, kurzer Name } ... }; die Gruppe „Questbuch“
+-- kommt aus den Reitern des Questbuchs (Gebiet, Welt, Suche, Tagebuch, Planer ...).
+local function Navi()
+  local buch = { L"Questbuch" }
+  for _, r in ipairs(QK.Gebiet.REITER) do buch[#buch + 1] = { "buch:" .. r[1], L(r[2]) } end
+  return {
+    buch,
+    { L"Darstellung", { 3, L"Aussehen" }, { 4, L"Lage" }, { 5, L"Sortierung" }, { 9, L"Feinschliff" } },
+    { L"Funktionen", { 6, L"Navigation" }, { 7, L"Kleine Helfer" }, { 8, L"Noch mehr" }, { 10, L"Unterwegs" }, { "teilen", L"Teilen und Übernehmen" } },
+    { L"Zugang", { 2, L"Barrierefreiheit" }, { 11, L"Profil und Tasten" } },
+    { L"Hilfe", { 13, L"Neuigkeiten" }, { 14, L"Discord und Feedback" }, { 12, L"Bedienung" }, { "fehler", L"Fehler melden" }, { "assistent", L"Assistent starten" } },
+  }
+end
+
+local function NaviBauen()
+  local leiste = CreateFrame("Frame", nil, fenster)
+  leiste:SetPoint("TOPLEFT", 12, -84)
+  leiste:SetPoint("BOTTOMLEFT", 12, 44)
+  leiste:SetWidth(168)
+  Rahmen(leiste, 0.5, { 1, 1, 1, 0.08 })
+  fenster.leiste = leiste
+  local y = -10
+  for _, gruppe in ipairs(Navi()) do
+    local kopf = Text(leiste, "GameFontNormalSmall", gruppe[1], 150)
+    kopf:SetPoint("TOPLEFT", 12, y)
+    Gold(function() kopf:SetTextColor(GOLD[1], GOLD[2], GOLD[3]) end)
+    y = y - 16
+    for i = 2, #gruppe do
+      local nr, name = gruppe[i][1], gruppe[i][2]
+      local k = CreateFrame("Button", nil, leiste)
+      k:SetSize(156, 16)
+      k:SetPoint("TOPLEFT", 6, y)
+      k.hg = k:CreateTexture(nil, "BACKGROUND")
+      k.hg:SetAllPoints()
+      k.strich = k:CreateTexture(nil, "ARTWORK")
+      k.strich:SetPoint("TOPLEFT"); k.strich:SetPoint("BOTTOMLEFT"); k.strich:SetWidth(2)
+      Gold(function() k.strich:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 1) end)
+      local hl = k:CreateTexture(nil, "HIGHLIGHT")
+      hl:SetAllPoints()
+      hl:SetColorTexture(1, 1, 1, 0.05)
+      k.text = Text(k, "GameFontHighlightSmall", name, 140)
+      k.text:SetPoint("LEFT", 12, 0)
+      k.nr = nr
+      k:SetScript("OnClick", function()
+        if nr == "assistent" then A:Oeffnen(1, false); return end
+        if type(nr) == "string" then bereich = nr else bereich, seite = nil, nr end
+        A:Auffrischen()
+      end)
+      k:SetScript("OnEnter", function() QK:Sprechen(name) end)
+      navi[#navi + 1] = k
+      y = y - 16
+    end
+    y = y - 4
+  end
+  local version = Text(leiste, "GameFontDisableSmall", "Version " .. tostring(QK.version), 150)
+  version:SetPoint("BOTTOMLEFT", 12, 10)
+
+  local kasten = CreateFrame("Frame", nil, fenster)
+  kasten:SetPoint("TOPLEFT", leiste, "TOPRIGHT", 10, 0)
+  kasten:SetPoint("BOTTOMRIGHT", -12, 44)
+  Rahmen(kasten, 0.35, { 1, 1, 1, 0.08 })
+  kasten:SetFrameLevel(math.max((fenster:GetFrameLevel() or 1), 1))
+  fenster.kasten = kasten
+end
+
+---------------------------------------------------------------------------
+-- Eingebettete Bereiche
+---------------------------------------------------------------------------
+-- holen(): baut den Rahmen und gibt ihn zurück, zeichnen(): frischt ihn auf,
+-- steuern(aktion): optional, Gamepad/Pfeiltasten im Bereich (true = behandelt)
+function A:BereichAnmelden(key, titel, holen, zeichnen, steuern)
+  bereiche[key] = { titel = titel, holen = holen, zeichnen = zeichnen, steuern = steuern }
+end
+
+function A:NaviBlaettern(schritt)
+  local liste = {}
+  for _, k in ipairs(navi) do if k.nr ~= "assistent" then liste[#liste + 1] = k end end
+  local markiert = (alsEinstellungen and bereich) or seite
+  local nr = 1
+  for i, k in ipairs(liste) do if k.nr == markiert then nr = i end end
+  local k = liste[((nr - 1 + schritt) % #liste) + 1]
+  if not k then return end
+  if type(k.nr) == "string" then bereich = k.nr else bereich, seite = nil, k.nr end
+  A:Auffrischen()
+end
+
+function A:Bereich(key)
+  if fenster and fenster:IsShown() and alsEinstellungen then
+    bereich = key
+    A:Auffrischen()
+  else
+    self:Oeffnen(QK.SEITE_EINSTELLUNGEN, true, key)
+  end
+end
+
+function A:BereichOffen(muster)
+  if not (fenster and fenster:IsShown() and alsEinstellungen and bereich) then return false end
+  return bereich:find(muster, 1, true) == 1
+end
+
+function A:Einbetten(f)
+  if f.eingebettet then return end
+  f.eingebettet = true
+  f:SetParent(fenster.kasten)
+  f:ClearAllPoints()
+  f:SetAllPoints(fenster.kasten)
+  f:SetScale(1)
+  f:SetFrameStrata(fenster:GetFrameStrata() or "DIALOG")
+  f:SetFrameLevel((fenster.kasten:GetFrameLevel() or 1) + 2)
+end
+
+-- Größe und Anordnung je nach Ansicht (Assistent oder Einstellungen)
+local function Ansicht()
+  local e = alsEinstellungen
+  local g = QK.db.hauptGroesse
+  if e then fenster:SetSize(math.max(760, g and g[1] or 820), math.max(640, g and g[2] or 660)) else fenster:SetSize(560, 440) end
+  if fenster.griff then fenster.griff:SetShown(e) end
+  if fenster.suche then fenster.suche:SetShown(e); if not e then fenster.trefferListe:Hide() end end
+  fenster.leiste:SetShown(e)
+  fenster.kasten:SetShown(e)
+  for _, p in ipairs(punkte) do p:SetShown(not e) end
+  inhalt:ClearAllPoints()
+  if e then
+    inhalt:SetPoint("TOPLEFT", fenster.kasten, "TOPLEFT", 16, -14)
+    inhalt:SetPoint("BOTTOMRIGHT", fenster.kasten, "BOTTOMRIGHT", -16, 10)
+  else
+    inhalt:SetPoint("TOPLEFT", 24, -84)
+    inhalt:SetPoint("BOTTOMRIGHT", -24, 64)
+  end
+  fenster.kopf:SetText(e and L"QUESTKOMPASS" or L"QUESTKOMPASS · EINRICHTUNG")
+end
+
+---------------------------------------------------------------------------
+-- Suche: findet Seiten und Bereiche nach Titel und Texten
+---------------------------------------------------------------------------
+local GROSS = { ["Ä"] = "ä", ["Ö"] = "ö", ["Ü"] = "ü" }
+local function klein(t)
+  t = tostring(t or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):lower()
+  return (t:gsub("\195[\132\150\156]", GROSS))
+end
+
+function A:Suchen(begriff)
+  begriff = klein(begriff):gsub("^%s+", ""):gsub("%s+$", "")
+  local treffer = {}
+  if #begriff < 2 then return treffer end
+  for i, s in ipairs(seiten) do
+    for _, t in ipairs(s.such or {}) do
+      if klein(t):find(begriff, 1, true) then
+        treffer[#treffer + 1] = { ziel = i, titel = L(s.titel), fund = t ~= s.titel and t or nil }
+        break
+      end
+    end
+  end
+  local keys = {}
+  for key in pairs(bereiche) do keys[#keys + 1] = key end
+  table.sort(keys)
+  for _, key in ipairs(keys) do
+    local b = bereiche[key]
+    if klein(b.titel):find(begriff, 1, true) then treffer[#treffer + 1] = { ziel = key, titel = b.titel } end
+  end
+  return treffer
+end
+
+function A:Springen(ziel)
+  if type(ziel) == "string" then bereich = ziel else bereich, seite = nil, ziel end
+  if fenster and fenster.suche then fenster.suche:SetText(""); fenster.suche:ClearFocus() end
+  A:Auffrischen()
+end
+
+local function SucheBauen()
+  local box = CreateFrame("EditBox", "QuestkompassEinstellungSuche", fenster, "InputBoxTemplate")
+  box:SetSize(180, 20)
+  box:SetPoint("TOPRIGHT", -44, -20)
+  box:SetAutoFocus(false)
+  box:SetMaxLetters(40)
+  fenster.suche = box
+  local platz = Text(box, "GameFontDisableSmall", L"Einstellung suchen …", 170)
+  platz:SetPoint("LEFT", 4, 0)
+  local liste = CreateFrame("Frame", nil, fenster)
+  liste:SetPoint("TOPRIGHT", box, "BOTTOMRIGHT", 0, -4)
+  liste:SetSize(260, 10)
+  liste:SetFrameLevel((fenster:GetFrameLevel() or 1) + 30)
+  Rahmen(liste, 0.98)
+  UI.GoldRand(liste, 0.45)
+  liste.knoepfe = {}
+  liste:Hide()
+  fenster.trefferListe = liste
+  local function zeigen()
+    local text = box:GetText() or ""
+    platz:SetShown(text == "")
+    local treffer = A:Suchen(text)
+    liste.treffer = treffer
+    for i = 1, math.max(#treffer, #liste.knoepfe) do
+      local k = liste.knoepfe[i]
+      if i <= 8 and treffer[i] and not k then
+        k = CreateFrame("Button", nil, liste)
+        k:SetSize(250, 20)
+        k:SetPoint("TOPLEFT", 5, -5 - (i - 1) * 21)
+        local hl = k:CreateTexture(nil, "HIGHLIGHT")
+        hl:SetAllPoints()
+        hl:SetColorTexture(1, 1, 1, 0.08)
+        k.text = Text(k, "GameFontHighlightSmall", "", 240)
+        k.text:SetPoint("LEFT", 6, 0)
+        k:SetScript("OnClick", function(self) A:Springen(self.ziel) end)
+        liste.knoepfe[i] = k
+      end
+      if k then
+        local t = i <= 8 and treffer[i]
+        k:SetShown(t and true or false)
+        if t then
+          k.ziel = t.ziel
+          k.text:SetText(t.fund and (t.titel .. " > " .. t.fund) or t.titel)
+        end
+      end
+    end
+    local n = math.min(#treffer, 8)
+    liste:SetHeight(n * 21 + 10)
+    liste:SetShown(n > 0 and alsEinstellungen)
+    if #text >= 2 and #treffer == 0 then QK:Sprechen(L"Nichts gefunden") end
+  end
+  box:SetScript("OnTextChanged", zeigen)
+  box:SetScript("OnEnterPressed", function(self)
+    local t = liste.treffer and liste.treffer[1]
+    if t then QK:Sprechen(t.titel); A:Springen(t.ziel) else self:ClearFocus() end
+  end)
+  box:SetScript("OnEscapePressed", function(self) self:SetText(""); self:ClearFocus() end)
+  box:SetScript("OnEditFocusLost", function() C_Timer.After(0.2, function() if not box:HasFocus() then liste:Hide() end end) end)
+end
+
+---------------------------------------------------------------------------
+-- Bereiche „Teilen und Übernehmen“ und „Fehler melden“
+---------------------------------------------------------------------------
+-- Mehrzeiliges Textfeld mit Bildlauf
+local function Textkasten(eltern, name, oben, unten)
+  local rolle = CreateFrame("ScrollFrame", name and (name .. "Rolle") or nil, eltern, "UIPanelScrollFrameTemplate")
+  rolle:SetPoint("TOPLEFT", 16, oben)
+  rolle:SetPoint("BOTTOMRIGHT", -32, unten)
+  local feld = CreateFrame("EditBox", name, rolle)
+  feld:SetMultiLine(true)
+  feld:SetAutoFocus(false)
+  feld:SetFontObject("GameFontHighlightSmall")
+  feld:SetWidth(460)
+  rolle:SetScrollChild(feld)
+  rolle:SetScript("OnSizeChanged", function(_, w) if type(w) == "number" then feld:SetWidth(w) end end)
+  feld:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  UI.Schreibschutz(feld)
+  local hg = CreateFrame("Frame", nil, eltern)
+  hg:SetPoint("TOPLEFT", rolle, "TOPLEFT", -6, 6)
+  hg:SetPoint("BOTTOMRIGHT", rolle, "BOTTOMRIGHT", 26, -6)
+  Rahmen(hg, 0.5, { 1, 1, 1, 0.08 })
+  hg:SetFrameLevel(math.max(1, (rolle:GetFrameLevel() or 2) - 1))
+  return feld
+end
+
+local teilen
+local function TeilenHolen()
+  if teilen then return teilen end
+  local f = CreateFrame("Frame", "QuestkompassTeilen", fenster.kasten)
+  f.hinweis = UI.Text(f, "GameFontHighlightSmall", "", 500)
+  f.hinweis:SetPoint("TOPLEFT", 16, -14)
+  f.hinweis:SetPoint("RIGHT", -16, 0)
+  f.hinweis:SetJustifyV("TOP")
+  f.text = Textkasten(f, "QuestkompassTeilenText", -64, 44)
+  local x = 16
+  local function knopf(text, breite, fn)
+    local k = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    k:SetSize(breite, 22)
+    k:SetText(text)
+    k:SetPoint("BOTTOMLEFT", x, 12)
+    k:SetScript("OnClick", fn)
+    x = x + breite + 8
+    return k
+  end
+  knopf(L"Meine Einstellungen", 150, function() A:Teilen("export") end)
+  knopf(L"Fremden Text einfügen", 160, function() A:Teilen("import") end)
+  knopf(L"Tagebuch als Text", 140, function() A:Teilen("tagebuch") end)
+  f.ok = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  f.ok:SetSize(110, 22)
+  f.ok:SetText(L"Übernehmen")
+  f.ok:SetPoint("BOTTOMRIGHT", -16, 12)
+  f.ok:SetScript("OnClick", function()
+    local geklappt, n = QK.Extras:Import(f.text:GetText())
+    if geklappt then QK:Meldung(L"%d Einstellungen übernommen.", n); A:Auffrischen()
+    else QK:Meldung(L"Dieser Text enthält keine Questkompass-Einstellungen.") end
+  end)
+  teilen = f
+  return f
+end
+
+A.teilenArt, A.teilenText = "export", nil
+local function TeilenZeichnen()
+  local f = TeilenHolen()
+  local art = A.teilenArt
+  if art == "import" then
+    f.hinweis:SetText(L"Füge hier Einstellungen ein, die dir jemand geschickt hat (Strg+V), und klick auf „Übernehmen“.")
+    f.text.nurLesen = false
+    if not f.importBereit then f.text:SetText(""); f.importBereit = true end
+    f.ok:Show()
+    f.text:SetFocus()
+  else
+    f.importBereit = nil
+    local text = A.teilenText or (art == "tagebuch" and QK.Unterwegs and QK.Unterwegs:TagebuchText()) or QK.Extras:Export()
+    f.hinweis:SetText(art == "tagebuch" and L"Die letzten 50 Einträge deines Tagebuchs. Ein Klick markiert alles, Strg+C kopiert."
+      or art == "text" and L"Ein Klick markiert alles, Strg+C kopiert."
+      or L"Deine Einstellungen als Text. Ein Klick markiert alles, Strg+C kopiert. So gibst du sie an Freunde oder deinen Twink weiter.")
+    UI.Lesetext(f.text, text)
+    f.ok:Hide()
+  end
+end
+
+-- art: "export" | "import" | "tagebuch" | "text"; text: eigener Text statt des üblichen
+function A:Teilen(art, text, titel)
+  A.teilenArt, A.teilenText = art or "export", text
+  if bereiche.teilen then bereiche.teilen.titel = titel or L"Teilen und Übernehmen" end
+  A:Bereich("teilen")
+end
+
+local fehlerRahmen
+local function FehlerHolen()
+  if fehlerRahmen then return fehlerRahmen end
+  local f = CreateFrame("Frame", "QuestkompassFehlerbericht", fenster.kasten)
+  local t = UI.Text(f, "GameFontHighlightSmall", L"Hier steht alles, was wir zum Nachstellen eines Fehlers brauchen. Ein Klick markiert den Text, Strg+C kopiert ihn. Schick ihn uns im Discord von ForeverUI (siehe „Discord und Feedback“).", 500)
+  t:SetPoint("TOPLEFT", 16, -14)
+  t:SetPoint("RIGHT", -16, 0)
+  f.text = Textkasten(f, "QuestkompassFehlerText", -64, 44)
+  local leeren = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  leeren:SetSize(160, 22)
+  leeren:SetText(L"Protokoll leeren")
+  leeren:SetPoint("BOTTOMLEFT", 16, 12)
+  leeren:SetScript("OnClick", function() QK.root.fehler = {}; A:Auffrischen() end)
+  fehlerRahmen = f
+  return f
+end
+
+function A:FehlerText()
+  local z = { ("Questkompass %s · Stand %s · Spiel %s · %s"):format(tostring(QK.version), QK.codeStand or "?",
+    tostring(select(4, GetBuildInfo())), GetLocale and GetLocale() or "?") }
+  local liste = QK.root.fehler or {}
+  if #liste == 0 then z[#z + 1] = L"Keine Fehler aufgezeichnet." end
+  for _, e in ipairs(liste) do z[#z + 1] = e end
+  return table.concat(z, "\n")
+end
+
+local function FehlerZeichnen()
+  UI.Lesetext(FehlerHolen().text, A:FehlerText())
+end
+
+---------------------------------------------------------------------------
+-- Aufbau
+---------------------------------------------------------------------------
 local function Erstellen()
   fenster = CreateFrame("Frame", "QuestkompassAssistent", UIParent)
   fenster:SetSize(560, 440)
+  fenster:SetResizable(true)
+  if fenster.SetResizeBounds then fenster:SetResizeBounds(760, 640, 1600, 1200)
+  elseif fenster.SetMinResize then fenster:SetMinResize(760, 640) end
+  local griff = CreateFrame("Button", nil, fenster)
+  griff:SetSize(16, 16)
+  griff:SetPoint("BOTTOMRIGHT", -2, 2)
+  griff:SetFrameLevel((fenster:GetFrameLevel() or 1) + 20)
+  griff.t = griff:CreateTexture(nil, "OVERLAY")
+  griff.t:SetAllPoints()
+  griff.t:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+  griff:SetScript("OnMouseDown", function() fenster:StartSizing("BOTTOMRIGHT") end)
+  griff:SetScript("OnMouseUp", function()
+    fenster:StopMovingOrSizing()
+    if alsEinstellungen then
+      local w, h = fenster:GetWidth(), fenster:GetHeight()
+      if type(w) == "number" and type(h) == "number" then QK.db.hauptGroesse = { math.floor(w), math.floor(h) } end
+    end
+  end)
+  fenster.griff = griff
   fenster:SetPoint("CENTER", -120, 40)
   fenster:SetFrameStrata("DIALOG")
   fenster:SetClampedToScreen(true)
@@ -546,18 +1048,20 @@ local function Erstellen()
   fenster:RegisterForDrag("LeftButton")
   fenster:SetScript("OnDragStart", fenster.StartMoving)
   fenster:SetScript("OnDragStop", fenster.StopMovingOrSizing)
-  Rahmen(fenster, 0.96, { GOLD[1], GOLD[2], GOLD[3], 0.45 })
+  Rahmen(fenster, 0.99)
+  UI.GoldRand(fenster, 0.45)
   tinsert(UISpecialFrames, "QuestkompassAssistent")
 
   local band = fenster:CreateTexture(nil, "ARTWORK")
   band:SetPoint("TOPLEFT", 1, -1)
   band:SetPoint("TOPRIGHT", -1, -1)
   band:SetHeight(64)
-  band:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.08)
+  Gold(function() band:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.08) end)
 
   local kopf = Text(fenster, "GameFontNormalSmall", "QUESTKOMPASS")
+  fenster.kopf = kopf
   kopf:SetPoint("TOPLEFT", 24, -16)
-  kopf:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+  Gold(function() kopf:SetTextColor(GOLD[1], GOLD[2], GOLD[3]) end)
   seitenTitel = Text(fenster, "GameFontHighlightLarge", "", 400)
   seitenTitel:SetPoint("TOPLEFT", 24, -34)
 
@@ -565,14 +1069,18 @@ local function Erstellen()
   schliessen:SetPoint("TOPRIGHT", 0, 0)
   schliessen:SetScript("OnClick", function() A:Schliessen() end)
 
+  SucheBauen()
+
   inhalt = CreateFrame("Frame", nil, fenster)
   inhalt:SetPoint("TOPLEFT", 24, -84)
   inhalt:SetPoint("BOTTOMRIGHT", -24, 64)
 
   SeitenBauen()
+  SeitenErgaenzen()
+  NaviBauen()
 
   punkte = {}
-  for i = 1, #seiten do
+  for i = 1, A.ASSISTENT_SEITEN do
     local p = CreateFrame("Button", nil, fenster)
     p:SetSize(8, 4)
     p.t = p:CreateTexture(nil, "ARTWORK")
@@ -585,7 +1093,7 @@ local function Erstellen()
   weiter = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
   weiter:SetSize(110, 24)
   weiter:SetScript("OnClick", function()
-    if seite < #seiten then seite = seite + 1; A:Auffrischen() else A:Schliessen() end
+    if seite < A:LetzteSeite() then seite = seite + 1; A:Auffrischen() else A:Schliessen() end
   end)
   zurueck = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
   zurueck:SetSize(90, 24)
@@ -596,17 +1104,25 @@ local function Erstellen()
   fertig:SetText(L"Fertig")
   fertig:SetScript("OnClick", function() A:Schliessen() end)
   fenster.fertig = fertig
+  local zurueckSetzen = UI.Knopf(fenster, L"Seite zurücksetzen", 130, function() A:SeiteZuruecksetzen() end)
+  zurueckSetzen:SetPoint("BOTTOMLEFT", fenster, "BOTTOMLEFT", 192, 15)
+  UI.Tipp(zurueckSetzen, L"Seite zurücksetzen", L"Stellt nur die Einstellungen dieser Seite auf den Standard zurück.")
+  fenster.zuruecksetzen = zurueckSetzen
   fenster:Hide()
 end
 
-function A:Oeffnen(start, einstellungen)
+function A:Oeffnen(start, einstellungen, bereichKey)
   if not fenster then Erstellen() end
   alsEinstellungen = einstellungen and true or false
+  bereich = alsEinstellungen and bereichKey or nil
   seite = math.max(1, math.min(start or 1, #seiten))
+  Ansicht()
   fenster:Show()
   if QK.db.versteckt then QK.db.versteckt = false; QK:Anwenden() end
   A:Auffrischen()
 end
+
+function A:Offen() return fenster and fenster:IsShown() and true or false end
 
 function A:Schliessen()
   if not QK.db.eingerichtet then
@@ -617,10 +1133,35 @@ function A:Schliessen()
   QK:Anwenden()
 end
 
+-- Nach einem Sprachwechsel das Fenster neu bauen, damit alle Seiten sofort in der neuen Sprache stehen.
+-- Ein Fenster lässt sich im Spiel nicht löschen: das alte wird versteckt und bleibt ungenutzt liegen.
+function A:Neubauen()
+  if not fenster then return end
+  local offen, alteSeite, alsE, alterBereich = fenster:IsShown(), seite, alsEinstellungen, bereich
+  for _, b in pairs(bereiche) do
+    local f = b.rahmen
+    if f then
+      f.eingebettet = nil
+      f:Hide()
+      f:SetParent(UIParent)
+      b.rahmen = nil
+    end
+  end
+  fenster:Hide()
+  fenster:SetScript("OnKeyDown", nil)
+  wipe(seiten); wipe(navi); wipe(goldTexte); UI.GoldVergessen()
+  teilen, fehlerRahmen = nil, nil
+  fenster, markierung, punkte, auswahl, A.letzteSeite = nil, nil, nil, 0, nil
+  if QK.Gebiet.Neubauen then QK.Gebiet:Neubauen() end
+  if offen then self:Oeffnen(alteSeite, alsE, alterBereich) end
+end
+
 ---------------------------------------------------------------------------
--- Eintrag in den Spieleinstellungen
+-- Eintrag in den Spieleinstellungen, Bereiche anmelden
 ---------------------------------------------------------------------------
 function A:Start()
+  A:BereichAnmelden("teilen", L"Teilen und Übernehmen", TeilenHolen, TeilenZeichnen)
+  A:BereichAnmelden("fehler", L"Fehler melden", FehlerHolen, FehlerZeichnen)
   local panel = CreateFrame("Frame")
   panel.name = "Questkompass"
   local t = Text(panel, "GameFontNormalLarge", "Questkompass")
