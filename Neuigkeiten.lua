@@ -6,7 +6,7 @@ local N = QK:Modul("Neuigkeiten")
 local UI = QK.UI
 local L = QK.L
 
-QK.STANDARD.updateHinweis = true   -- Hinweis, wenn jemand in Gruppe oder Gilde eine neuere Version hat
+QK.STANDARD.updateHinweis = false   -- Hinweis, wenn jemand in Gruppe oder Gilde eine neuere Version hat
 
 local PRAEFIX = "Questkompass"     -- derselbe Kanal wie der Gruppen-Abgleich, Nachrichten beginnen mit „V:“
 
@@ -115,7 +115,7 @@ function N:UpdatePruefen()
   if not root or not teile(QK.version) then return end
   local alt = root.gesehenVersion
   root.gesehenVersion = QK.version
-  if alt and N.Neuer(QK.version, alt) and QK.db.eingerichtet then
+  if alt and N.Neuer(QK.version, alt) and QK.db.eingerichtet and QK.db.updateHinweis then
     QK:Meldung(L"auf Version %s aktualisiert. Was neu ist: %s/qk neu|r", QK.version, QK.gold)
   end
   if root.neuesteVersion and not N.Neuer(root.neuesteVersion, QK.version) then root.neuesteVersion = nil end

@@ -4,7 +4,7 @@ Ruhige Questziel-Liste, Gebietsfortschritt und Quest-Tooltips für WoW Forever. 
 
 ## Was es kann
 
-- **Einrichtungsassistent** beim ersten Start, danach ein Hauptfenster im einheitlichen ForeverUI-Design: Seitenleiste mit Questbuch, Darstellung, Funktionen, Zugang und Hilfe, Suche über alle Einstellungen, sechs Akzentfarben, „Seite zurücksetzen“, veränderbare Größe.
+- **Einrichtungsassistent** in den Einstellungen (öffnet sich nicht von selbst), dazu ein Hauptfenster im einheitlichen ForeverUI-Design: Seitenleiste mit Questbuch, Darstellung, Funktionen, Zugang und Hilfe, Suche über alle Einstellungen, sechs Akzentfarben, „Seite zurücksetzen“, veränderbare Größe.
 - **Zielliste** in drei Stilen, sortiert nach Entfernung, Zone oder Questlog. Auf Wunsch mit einklappbaren Zonenüberschriften, Mausrad zum Blättern, Marken für Elite, Dungeon, täglich, „Neu“ und Gruppenmitglieder auf derselben Quest.
 - **Navigation:** kleiner Kompasspfeil an jeder Quest, großer schwebender Fokuspfeil mit Entfernung und Ankunftszeit, automatischer Fokus auf die nächste Quest.
 - **Questgegenstände** lassen sich direkt an der Quest benutzen. Quests mit Zeitlimit zeigen einen Countdown.

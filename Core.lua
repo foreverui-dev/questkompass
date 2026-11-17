@@ -35,8 +35,8 @@ QK.STANDARD = {
   ruheAlpha = 0.35,
   blizzardAusblenden = true,
   pfeil = true,             -- Kompasspfeil an jeder Quest
-  meldungen = true,         -- Fortschritt in der Bildschirmmitte
-  klang = true,             -- Klang bei fertiger Quest
+  meldungen = false,        -- Fortschritt in der Bildschirmmitte
+  klang = false,            -- Klang bei fertiger Quest
   autoAnnehmen = false,
   autoAbgeben = false,
   belohnungsTipp = true,
@@ -54,7 +54,7 @@ QK.STANDARD = {
   mitspieler = true,        -- Gruppenmitglieder mit derselben Quest
   graueAusblenden = false,
   epVorschau = true,
-  logWarnung = true,
+  logWarnung = false,
   gruppenMeldungen = false,
   neuMarkierung = true,
   -- 0.4 Barrierefreiheit
@@ -68,14 +68,14 @@ QK.STANDARD = {
   instanzModus = true,      -- in Dungeons nur passende Quests
   kampfNurFokus = false,    -- im Kampf nur die Fokus-Quest
   minimapPfeil = true,      -- Pfeil am Minikartenrand
-  abgabeErinnerung = true,
+  abgabeErinnerung = false,
   goldVorschau = true,
   belohnungsVergleich = true,
   taeglichZeile = true,
   gruppenAbgleich = true,
   notizenZeigen = true,
   zielStufe = nil,          -- Stufenplaner
-  erfolgMeldungen = true,   -- Meldung bei neuem Meilenstein
+  erfolgMeldungen = false,  -- Meldung bei neuem Meilenstein
   twinks = true,            -- Twink-Hilfe in Tooltip und Questbuch
   sprache = "auto",         -- auto | de | en
   -- 0.6
@@ -89,21 +89,21 @@ QK.STANDARD = {
   autoTeilen = false,       -- neue Quests in der Gruppe teilen
   questPlaketten = true,    -- Symbol an Quest-Gegnern (Namensplakette)
   questGegenstaende = true, -- am Gegenstand zeigen, für welche Quests er gebraucht wird
-  zeitWarnung = true,       -- Warnung vor Ablauf von Zeitlimits
+  zeitWarnung = false,      -- Warnung vor Ablauf von Zeitlimits
   -- 1.1
   plakettenGroesse = "normal", -- klein | normal | gross
   questGegnerTon = false,   -- Hinweiston, wenn ein Quest-Gegner auftaucht
   zielHervorheben = true,   -- anvisierter Quest-Gegner markiert seine Quest in der Liste
-  verkaufsWarnung = true,
-  haendlerHinweis = true,
-  bankHinweis = true,
+  verkaufsWarnung = false,
+  haendlerHinweis = false,
+  bankHinweis = false,
   questText = true,         -- Questtext im Tooltip der Liste
   zielKlang = false,        -- Ton bei jedem fertigen Ziel
   prognose = true,          -- Sitzung und Stufenprognose in Tooltips
   leichenPfeil = true,
   fokusWeiter = false,      -- fertige Fokus-Quest: Fokus springt zur nächsten
   geteiltAnnehmen = false,  -- von Gruppenmitgliedern geteilte Quests annehmen
-  gruppenWarnung = true,
+  gruppenWarnung = false,
   dialogVorlesen = true,    -- Questdialog und Belohnungen vorlesen (wenn Vorlesen an ist)
   -- 1.2
   interfaceAussehen = true, -- mit ForeverUI-Interface dessen Balkentextur und Akzentfarbe
@@ -267,9 +267,16 @@ local function kopie(v)
 end
 QK.Kopie = kopie
 
+-- Leise ab Werk (seit 17.11.2026): keine Töne, Chat-Meldungen oder Einblendungen, solange man sie nicht
+-- selbst einschaltet. Bestehende Einstellungen bekommen diese Werte einmalig, danach gilt die eigene Wahl.
+QK.LEISE = { "meldungen", "klang", "abgabeErinnerung", "logWarnung", "zeitWarnung", "verkaufsWarnung", "haendlerHinweis", "bankHinweis", "gruppenWarnung", "erfolgMeldungen", "updateHinweis" }
 function QK:Standardwerte(ziel)
   for k, v in pairs(self.STANDARD) do
     if ziel[k] == nil then ziel[k] = kopie(v) end
+  end
+  if not ziel.leiseAbWerk then
+    for _, k in ipairs(self.LEISE) do ziel[k] = self.STANDARD[k] end
+    ziel.leiseAbWerk = true
   end
 end
 
@@ -450,9 +457,7 @@ QK:Ereignis("PLAYER_LOGIN", function()
   for _, m in ipairs(QK.module) do
     if m.Start then QK:Sicher(m.name, m.Start, m) end
   end
-  if not QK.db.eingerichtet and QK.Assistent then
-    C_Timer.After(2, function() QK:Sicher("Assistent", QK.Assistent.Oeffnen, QK.Assistent, 1) end)
-  end
+  -- Leise ab Werk: kein Fenster öffnet sich von selbst. Der Assistent steht in den Einstellungen.
 end)
 
 ---------------------------------------------------------------------------
