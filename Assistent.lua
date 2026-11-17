@@ -70,15 +70,52 @@ local function Karte(eltern, titel, text, breite, hoehe, istGewaehlt, waehlen)
 end
 
 -- Schalter mit Beschriftung und Erklärung.
+-- Schalter im ForeverUI-Stil „Klar“ (statt Häkchen): Spur in Akzentfarbe, wenn an, weißer Knopf wandert
+-- nach rechts. Verhält sich wie ein CheckButton (SetChecked, GetChecked, OnClick schaltet vorher um).
+local function Umschalter(eltern)
+  local c = CreateFrame("Button", nil, eltern)
+  c:SetSize(34, 18)
+  local spur = c:CreateTexture(nil, "BACKGROUND")
+  spur:SetAllPoints()
+  local knopf = c:CreateTexture(nil, "ARTWORK")
+  knopf:SetSize(14, 14)
+  knopf:SetColorTexture(1, 1, 1, 1)
+  local hl = c:CreateTexture(nil, "HIGHLIGHT")
+  hl:SetAllPoints()
+  hl:SetColorTexture(1, 1, 1, 0.08)
+  c.an = false
+  c.SetChecked = function(self, an)
+    self.an = an and true or false
+    knopf:ClearAllPoints()
+    if self.an then
+      local a = QK.farben.gold
+      spur:SetColorTexture(a[1], a[2], a[3], 1)
+      knopf:SetPoint("RIGHT", -2, 0)
+    else
+      spur:SetColorTexture(1, 1, 1, 0.18)
+      knopf:SetPoint("LEFT", 2, 0)
+    end
+  end
+  c.GetChecked = function(self) return self.an end
+  local setze = c.SetScript
+  c.SetScript = function(self, name, fn)
+    if name == "OnClick" and fn then
+      return setze(self, name, function(s, ...) s:SetChecked(not s.an); return fn(s, ...) end)
+    end
+    return setze(self, name, fn)
+  end
+  c:SetChecked(false)
+  return c
+end
+
 local function Schalter(eltern, titel, text, schluessel, nachher)
   local f = CreateFrame("Frame", nil, eltern)
   f:SetSize(240, 40)
-  local c = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
-  c:SetSize(24, 24)
-  c:SetPoint("TOPLEFT", 0, 2)
-  local l = Text(f, "GameFontHighlight", titel, 205)
-  l:SetPoint("TOPLEFT", 28, -3)
-  local d = Text(f, "GameFontDisableSmall", text or "", 205)
+  local c = Umschalter(f)
+  c:SetPoint("TOPLEFT", 0, -2)
+  local l = Text(f, "GameFontHighlight", titel, 192)
+  l:SetPoint("TOPLEFT", 42, -3)
+  local d = Text(f, "GameFontDisableSmall", text or "", 192)
   d:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -2)
   if bauSeite then bauSeite.schluessel[#bauSeite.schluessel + 1] = schluessel end
   c:SetScript("OnClick", function(self)
@@ -144,7 +181,7 @@ local function SeitenBauen()
       { L"Alles größer", L"Fenster, Pfeil und Meldungen um ein Viertel größer.", "allesGroesser" },
       { L"Weniger Bewegung", L"Keine Einblendungen, Meldungen bleiben länger.", "wenigerBewegung" },
     }, -44, 52)
-    local test = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local test = QK.FlachKnopf(s)
     test:SetSize(150, 22)
     test:SetText(L"Vorlesen testen")
     test:SetPoint("TOPLEFT", 255, -158)
@@ -203,10 +240,10 @@ local function SeitenBauen()
       QK.db.skalierung = math.max(0.6, math.min(2.0, (QK.db.skalierung or 1) + d))
       QK:Anwenden(); A:Auffrischen()
     end
-    local minus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local minus = QK.FlachKnopf(s)
     minus:SetSize(26, 20); minus:SetText("–"); minus:SetPoint("TOPLEFT", 80, -176)
     minus:SetScript("OnClick", function() schritt(-0.1) end)
-    local plus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local plus = QK.FlachKnopf(s)
     plus:SetSize(26, 20); plus:SetText("+"); plus:SetPoint("TOPLEFT", 175, -176)
     plus:SetScript("OnClick", function() schritt(0.1) end)
     local b = Text(s, "GameFontNormal", L"Breite", 200)
@@ -218,10 +255,10 @@ local function SeitenBauen()
       QK.db.breite = math.max(180, math.min(400, (QK.db.breite or 240) + d))
       QK:Anwenden(); A:Auffrischen()
     end
-    local bminus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local bminus = QK.FlachKnopf(s)
     bminus:SetSize(26, 20); bminus:SetText("–"); bminus:SetPoint("TOPLEFT", 340, -176)
     bminus:SetScript("OnClick", function() bschritt(-20) end)
-    local bplus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local bplus = QK.FlachKnopf(s)
     bplus:SetSize(26, 20); bplus:SetText("+"); bplus:SetPoint("TOPLEFT", 435, -176)
     bplus:SetScript("OnClick", function() bschritt(20) end)
     merke({ Auffrischen = function()
@@ -347,17 +384,17 @@ local function SeitenBauen()
       QK.db.tagesziel = math.max(0, math.min(200, (QK.db.tagesziel or 0) + d))
       QK:Anwenden(); A:Auffrischen()
     end
-    local minus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local minus = QK.FlachKnopf(s)
     minus:SetSize(26, 20); minus:SetText("–"); minus:SetPoint("TOPLEFT", 90, -210)
     minus:SetScript("OnClick", function() schritt(-5) end)
-    local plus = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local plus = QK.FlachKnopf(s)
     plus:SetSize(26, 20); plus:SetText("+"); plus:SetPoint("TOPLEFT", 215, -210)
     plus:SetScript("OnClick", function() schritt(5) end)
     merke({ Auffrischen = function()
       local n = QK.db.tagesziel or 0
       wert:SetText(n > 0 and (L"%d Quests"):format(n) or L"aus")
     end })
-    local teilen = CreateFrame("Button", nil, s, "UIPanelButtonTemplate")
+    local teilen = QK.FlachKnopf(s)
     teilen:SetSize(200, 22)
     teilen:SetText(L"Einstellungen teilen")
     teilen:SetPoint("TOPLEFT", 255, -210)
@@ -950,16 +987,16 @@ local function Erstellen()
     punkte[i] = p
   end
 
-  weiter = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
+  weiter = QK.FlachKnopf(fenster)
   weiter:SetSize(110, 24)
   weiter:SetScript("OnClick", function()
     if seite < A:LetzteSeite() then seite = seite + 1; A:Auffrischen() else A:Schliessen() end
   end)
-  zurueck = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
+  zurueck = QK.FlachKnopf(fenster)
   zurueck:SetSize(90, 24)
   zurueck:SetText(L"Zurück")
   zurueck:SetScript("OnClick", function() if seite > 1 then seite = seite - 1; A:Auffrischen() end end)
-  local fertig = CreateFrame("Button", nil, fenster, "UIPanelButtonTemplate")
+  local fertig = QK.FlachKnopf(fenster)
   fertig:SetSize(90, 24)
   fertig:SetText(L"Fertig")
   fertig:SetScript("OnClick", function() A:Schliessen() end)
@@ -1029,7 +1066,7 @@ function A:Start()
   t:SetPoint("TOPLEFT", 16, -16)
   local d = Text(panel, "GameFontHighlight", L"Alle Einstellungen findest du im eigenen Fenster.", 500)
   d:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -10)
-  local b = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+  local b = QK.FlachKnopf(panel)
   b:SetSize(200, 26)
   b:SetText(L"Einstellungen öffnen")
   b:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -14)

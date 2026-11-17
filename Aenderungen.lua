@@ -6,10 +6,12 @@ QK.AENDERUNGEN = {
     de = {
       "Neu: Plugin für ForeverUI. Ist ForeverUI installiert, erscheinen die wichtigsten Einstellungen dort unter „Plugins“ (Stil, Lage, Größe, Breite, Sortierung, Pfeile, Meldungen, Tooltips, Automatik). Questkompass läuft weiter genauso auch ohne ForeverUI.",
       "Mit eingeschaltetem ForeverUI-Interface übernimmt Questkompass dessen Balkentextur und Akzentfarbe. Abschaltbar mit „Aussehen von ForeverUI übernehmen“.",
+      "Neues Design „Klar“ wie in ForeverUI: Schalter statt Häkchen und flache Knöpfe in den Einstellungen.",
     },
     en = {
       "New: plugin for ForeverUI. With ForeverUI installed, the main settings appear there under “Plugins” (style, position, size, width, sorting, arrows, messages, tooltips, automation). Questkompass keeps working exactly the same without ForeverUI.",
       "With the ForeverUI interface turned on, Questkompass takes on its bar texture and accent colour. Can be turned off with “Use ForeverUI's look”.",
+      "New “Clear” design as in ForeverUI: switches instead of checkboxes and flat buttons in the settings.",
     },
   },
   { version = "1.1.0",

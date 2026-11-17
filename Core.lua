@@ -743,3 +743,35 @@ QK:Befehl({ "sprache", "language" }, function(rest)
   QK:Anwenden()
   QK:Meldung(L"Sprache geändert.")
 end, L"/qk sprache de | en | auto – Sprache der Oberfläche")
+
+-- Flacher Knopf im ForeverUI-Stil „Klar“ (ersetzt UIPanelButtonTemplate): dunkle Fläche, feiner Rand,
+-- helle Fläche beim Überfahren. SetText, GetText und GetFontString funktionieren wie gewohnt.
+function QK.FlachKnopf(eltern, name)
+  local k = CreateFrame("Button", name, eltern)
+  k:SetSize(110, 22)
+  local fs = k:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  fs:SetPoint("CENTER")
+  k:SetFontString(fs)
+  k:SetNormalFontObject("GameFontHighlightSmall")
+  k:SetHighlightFontObject("GameFontHighlightSmall")
+  k:SetDisabledFontObject("GameFontDisableSmall")
+  local hg = k:CreateTexture(nil, "BACKGROUND")
+  hg:SetAllPoints()
+  hg:SetColorTexture(0.06, 0.06, 0.08, 0.9)
+  local function kante(p1, p2, b, h)
+    local t = k:CreateTexture(nil, "BORDER")
+    t:SetPoint(p1)
+    t:SetPoint(p2)
+    if b then t:SetWidth(b) else t:SetHeight(h) end
+    t:SetColorTexture(1, 1, 1, 0.14)
+  end
+  kante("TOPLEFT", "TOPRIGHT", nil, 1)
+  kante("BOTTOMLEFT", "BOTTOMRIGHT", nil, 1)
+  kante("TOPLEFT", "BOTTOMLEFT", 1)
+  kante("TOPRIGHT", "BOTTOMRIGHT", 1)
+  local hl = k:CreateTexture(nil, "HIGHLIGHT")
+  hl:SetAllPoints()
+  hl:SetColorTexture(1, 1, 1, 0.06)
+  if k.SetPushedTextOffset then k:SetPushedTextOffset(0, -1) end
+  return k
+end
