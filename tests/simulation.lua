@@ -960,6 +960,29 @@ local function Durchlauf(modern)
     Timer()
     pruefe(ok, "/qk " .. b .. (ok and "" or (" → " .. tostring(err))))
   end
+  -- Plugin für ForeverUI (ohne ForeverUI: in die Warteschlange)
+  local pl = QK.plugin
+  local q = _G.ForeverUIPlugins
+  pruefe(pl and q and q[#q] == pl and pl.id == "questkompass", "ForeverUI-Plugin wartet auf ForeverUI")
+  local passt = #pl.einstellungen >= 15
+  for _, o in ipairs(pl.einstellungen) do
+    if QK.STANDARD[o.id] ~= o.standard then passt = false; print("         abweichend: " .. o.id) end
+  end
+  pruefe(passt, "Plugin-Einstellungen passen zu den Standardwerten")
+  pl.schreiben("stil", "kompakt")
+  pruefe(QK.db.stil == "kompakt" and QK.db.anzahl == 12, "Stil über das Plugin bringt seine Anzahl mit")
+  pl.schreiben("stil", "ruhig")
+  pruefe(#QK.alleBalken > 0, "Balken sind für die Textur angemeldet")
+  local b1, textur = QK.alleBalken[1], nil
+  b1.SetStatusBarTexture = function(_, t) textur = t end
+  pl.aussehen({ an = true, textur = "Interface\\Glatt", akzent = { 0.1, 0.2, 0.3 } })
+  pruefe(textur == "Interface\\Glatt" and QK.farben.gold[3] == 0.3, "Aussehen von ForeverUI übernommen")
+  pl.schreiben("interfaceAussehen", false)
+  pruefe(textur == QK.STANDARD_TEXTUR and QK.farben.gold[3] ~= 0.3, "abschaltbar: eigenes Aussehen zurück")
+  pl.schreiben("interfaceAussehen", true)
+  pl.aussehen({ an = false })
+  pruefe(textur == QK.STANDARD_TEXTUR, "Interface aus: eigenes Aussehen")
+
   pruefe(QK.root.diagnose and QK.root.diagnose.interface == (modern and 16001 or 11507), "Diagnose gespeichert")
   pruefe(not QK.root.fehler or #QK.root.fehler == 0, "keine Fehler im Protokoll" .. ((QK.root.fehler and QK.root.fehler[1]) and (": " .. QK.root.fehler[1]) or ""))
 end

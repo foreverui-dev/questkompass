@@ -656,3 +656,6 @@ E["Questkompass:|r "] = "Questkompass:|r "
 E["Elite!"] = "Elite!"
 E["Navigator"] = "Navigator"
 E["Dungeon"] = "Dungeon"
+-- 1.2 ForeverUI-Plugin
+E["Aussehen von ForeverUI übernehmen"] = "Use ForeverUI's look"
+E["Balken und Akzentfarbe wie im ForeverUI-Interface, solange es eingeschaltet ist."] = "Bars and accent colour like the ForeverUI interface while it is turned on."

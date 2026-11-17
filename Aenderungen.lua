@@ -2,6 +2,16 @@
 -- (lua5.1 tools/aenderungen.lua > Aenderungen.lua), bitte nicht von Hand ändern.
 local _, QK = ...
 QK.AENDERUNGEN = {
+  { version = "1.2.0",
+    de = {
+      "Neu: Plugin für ForeverUI. Ist ForeverUI installiert, erscheinen die wichtigsten Einstellungen dort unter „Plugins“ (Stil, Lage, Größe, Breite, Sortierung, Pfeile, Meldungen, Tooltips, Automatik). Questkompass läuft weiter genauso auch ohne ForeverUI.",
+      "Mit eingeschaltetem ForeverUI-Interface übernimmt Questkompass dessen Balkentextur und Akzentfarbe. Abschaltbar mit „Aussehen von ForeverUI übernehmen“.",
+    },
+    en = {
+      "New: plugin for ForeverUI. With ForeverUI installed, the main settings appear there under “Plugins” (style, position, size, width, sorting, arrows, messages, tooltips, automation). Questkompass keeps working exactly the same without ForeverUI.",
+      "With the ForeverUI interface turned on, Questkompass takes on its bar texture and accent colour. Can be turned off with “Use ForeverUI's look”.",
+    },
+  },
   { version = "1.1.0",
     de = {
       "Neues Aussehen wie bei allen ForeverUI-Addons: Einstellungen und Questbuch in einem Fenster mit Seitenleiste (Questbuch, Darstellung, Funktionen, Zugang, Hilfe), Suche über alle Einstellungen und veränderbarer Größe, die gemerkt wird.",
@@ -112,30 +122,6 @@ QK.AENDERUNGEN = {
       "Farbenblind-Modus: Blau und Orange statt Grün und Rot, Fokuspfeil mit Richtung in Worten, Status im Questbuch zusätzlich als Wort",
       "Alles größer: Questbuch, Assistent, Fokuspfeil, Menü und Meldungen um ein Viertel größer; die Liste lässt sich bis 200 % vergrößern",
       "Weniger Bewegung: Meldungen ohne Ein- und Ausblenden und doppelt so lange sichtbar",
-    },
-  },
-  { version = "0.3.0",
-    de = {
-      "Großer Fokuspfeil, frei schwebend, mit Entfernung und Ankunftszeit",
-      "Automatischer Fokus auf die nächstgelegene Quest",
-      "Knopf für Questgegenstände direkt an der Quest",
-      "Zonenüberschriften in der Liste, einklappbar",
-      "Gruppenmitglieder mit derselben Quest",
-      "Countdown für Quests mit Zeitlimit",
-      "Marken für Elite, Dungeon, Schlachtzug, täglich und wöchentlich",
-      "Graue Quests werden markiert und auf Wunsch ausgeblendet",
-      "Erfahrungsvorschau: was deine fertigen Quests zusammen bringen",
-      "Warnung, wenn das Questlog fast voll ist",
-      "Questtagebuch mit allen abgegebenen Quests",
-      "Sitzungsstatistik mit Quests und EP pro Stunde",
-      "Weltübersicht: Fortschritt aller Zonen",
-      "Suche über alle Quests, deutsch und englisch",
-      "Tastenkürzel (Liste, nächste Quest, Fokus weiter, Questbuch, Einstellungen)",
-      "Mausrad blättert durch lange Listen",
-      "Akzentfarben: Gold, Klassenfarbe, Eis, Smaragd",
-      "Fortschritt auf Wunsch in den Gruppenchat",
-      "Profile: Einstellungen für alle Charaktere oder nur für einen",
-      "Neue Quests sind zwei Minuten lang als „Neu“ markiert",
     },
   },
 }

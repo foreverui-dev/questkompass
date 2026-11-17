@@ -1,5 +1,15 @@
 # Questkompass
 
+## 1.2.0
+
+- Neu: Plugin für ForeverUI. Ist ForeverUI installiert, erscheinen die wichtigsten Einstellungen dort unter „Plugins“ (Stil, Lage, Größe, Breite, Sortierung, Pfeile, Meldungen, Tooltips, Automatik). Questkompass läuft weiter genauso auch ohne ForeverUI.
+- Mit eingeschaltetem ForeverUI-Interface übernimmt Questkompass dessen Balkentextur und Akzentfarbe. Abschaltbar mit „Aussehen von ForeverUI übernehmen“.
+
+**English**
+
+- New: plugin for ForeverUI. With ForeverUI installed, the main settings appear there under “Plugins” (style, position, size, width, sorting, arrows, messages, tooltips, automation). Questkompass keeps working exactly the same without ForeverUI.
+- With the ForeverUI interface turned on, Questkompass takes on its bar texture and accent colour. Can be turned off with “Use ForeverUI's look”.
+
 ## 1.1.0
 
 - Neues Aussehen wie bei allen ForeverUI-Addons: Einstellungen und Questbuch in einem Fenster mit Seitenleiste (Questbuch, Darstellung, Funktionen, Zugang, Hilfe), Suche über alle Einstellungen und veränderbarer Größe, die gemerkt wird.

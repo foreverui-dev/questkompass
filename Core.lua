@@ -105,6 +105,8 @@ QK.STANDARD = {
   geteiltAnnehmen = false,  -- von Gruppenmitgliedern geteilte Quests annehmen
   gruppenWarnung = true,
   dialogVorlesen = true,    -- Questdialog und Belohnungen vorlesen (wenn Vorlesen an ist)
+  -- 1.2
+  interfaceAussehen = true, -- mit ForeverUI-Interface dessen Balkentextur und Akzentfarbe
 }
 
 -- Seite, mit der das Einstellungsfenster öffnet (1 = Willkommen, 2 = Barrierefreiheit)
@@ -120,11 +122,23 @@ QK.AKZENTE = {
 }
 QK.AKZENT_REIHE = { "gold", "klasse", "eis", "glut", "wald", "silber" }
 
+-- Balken: schlichte Textur oder, mit ForeverUI-Interface, dessen Textur (siehe ForeverUIPlugin.lua)
+QK.STANDARD_TEXTUR = "Interface\\Buttons\\WHITE8X8"
+QK.alleBalken = {}
+function QK:Balken(b)
+  self.alleBalken[#self.alleBalken + 1] = b
+  b:SetStatusBarTexture(self.fuiTextur or self.STANDARD_TEXTUR)
+end
+function QK:BalkenAnwenden()
+  for _, b in ipairs(self.alleBalken) do pcall(b.SetStatusBarTexture, b, self.fuiTextur or self.STANDARD_TEXTUR) end
+end
+
 -- Ändert die Akzentfarbe an Ort und Stelle, damit alle Verweise auf QK.farben.gold mitziehen.
 function QK:AkzentAnwenden()
   if self.db and self.db.akzent == "smaragd" then self.db.akzent = "wald" end
   local a = self.AKZENTE[self.db and self.db.akzent or "gold"] or self.AKZENTE.gold
   local r, g, b = a[2], a[3], a[4]
+  if self.fuiAkzent then r, g, b = self.fuiAkzent[1], self.fuiAkzent[2], self.fuiAkzent[3] end
   if not r then
     local _, klasse = UnitClass("player")
     local c = klasse and RAID_CLASS_COLORS and RAID_CLASS_COLORS[klasse]

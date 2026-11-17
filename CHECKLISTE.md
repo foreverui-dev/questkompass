@@ -39,6 +39,7 @@ Was kein Test sieht. Jeder Fund wird notiert als: Datei, Zeile, Problem, Vorschl
 - [ ] Quest annehmen, Ziel erfüllen, abgeben: Liste, Fokuspfeil, Meldungen plausibel
 - [ ] Hauptfenster öffnen, durch alle Seiten der Seitenleiste klicken, auch das Questbuch
 - [ ] mit offenem Hauptfenster per Enter chatten
+- [ ] mit ForeverUI: unter /fui > Plugins > Questkompass Einstellungen ändern, wirkt sofort; Interface an: Balken und Akzent wie ForeverUI
 
 ## Veröffentlichung
 

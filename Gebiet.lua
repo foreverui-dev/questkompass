@@ -422,7 +422,7 @@ end
 
 local function Balken(eltern, y)
   local b = CreateFrame("StatusBar", nil, eltern)
-  b:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+  QK:Balken(b)
   b:SetPoint("TOPLEFT", 0, y)
   b:SetPoint("TOPRIGHT", 0, y)
   b:SetHeight(14)
