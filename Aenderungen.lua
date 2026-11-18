@@ -70,6 +70,14 @@ QK.AENDERUNGEN = {
       "Fixed: the error log clears itself after an update, /qk fehler leeren clears it by hand.",
     },
   },
+  { version = "1.0.1",
+    de = {
+      "Leise ab Werk: keine Töne, Einblendungen in der Bildschirmmitte oder Fenster, die von selbst aufgehen. Alles lässt sich in den Einstellungen wieder einschalten, dort steht auch der Assistent (/qk einrichten). Bestehende Einstellungen werden dafür einmalig umgestellt.",
+    },
+    en = {
+      "Quiet by default: no sounds, pop-ups in the middle of the screen or windows that open on their own. Everything can be turned back on in the settings, where the setup assistant is too (/qk setup). Existing settings are switched over once.",
+    },
+  },
   { version = "1.0.0",
     de = {
       "Quests oben anheften (Rechtsklick), angeheftete Quests stehen gleich nach dem Fokus",
@@ -116,16 +124,6 @@ QK.AENDERUNGEN = {
       "Meilensteine im neuen Reiter „Erfolge“ mit Meldung bei neuen Abzeichen",
       "Notizen je Quest in Liste und Tooltip (/qk notiz)",
       "Questlog aufräumen: graue, gescheiterte und lange liegende Quests, Abbrechen nur mit Rückfrage",
-    },
-  },
-  { version = "0.4.0",
-    de = {
-      "Neue Seite „Barrierefreiheit“ gleich zu Beginn des Einrichtungsassistenten",
-      "Vorlesen: Fortschritt, fertige Quests und „Am Ziel“ über die Sprachausgabe des Spiels; Tastenkürzel und /qk vorlesen lesen die Fokus-Quest mit offenen Zielen und Entfernung vor",
-      "Hoher Kontrast: fast undurchsichtige Hintergründe, weiße Schrift, hellere Nebentexte",
-      "Farbenblind-Modus: Blau und Orange statt Grün und Rot, Fokuspfeil mit Richtung in Worten, Status im Questbuch zusätzlich als Wort",
-      "Alles größer: Questbuch, Assistent, Fokuspfeil, Menü und Meldungen um ein Viertel größer; die Liste lässt sich bis 200 % vergrößern",
-      "Weniger Bewegung: Meldungen ohne Ein- und Ausblenden und doppelt so lange sichtbar",
     },
   },
 }
