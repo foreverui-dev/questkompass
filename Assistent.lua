@@ -412,7 +412,7 @@ local function SeitenBauen()
       { L"Questtext im Tooltip", L"Auftrag und Schwierigkeit in der Liste.", "questText" },
       { L"Ton bei jedem Ziel", L"Nicht nur, wenn die Quest fertig ist.", "zielKlang" },
       { L"Verkaufswarnung", L"Questgegenstand verkauft? Hinweis mit Rückkauf.", "verkaufsWarnung" },
-      { L"Händler-Hinweis", L"Händler verkauft etwas für deine Quests.", "haendlerHinweis" },
+      { L"Händler-Hinweis", L"Im Chat: Händler verkauft etwas für deine Quests, Beute wird später noch gebraucht.", "haendlerHinweis" },
       { L"Bank-Hinweis", L"Was deine Twinks noch sammeln.", "bankHinweis" },
       { L"Sitzung und Prognose", L"EP pro Stunde und nächste Stufe im Tooltip.", "prognose" },
       { L"Geteilte Quests annehmen", L"Von Gruppenmitgliedern, Umschalt hält an.", "geteiltAnnehmen" },

@@ -7,8 +7,9 @@ local L = QK.L
 
 U.sitzungGeld = nil
 
+-- Leise ab Werk: nur mit eingeschalteten Meldungen, sonst gar nicht (auch nicht im Chat)
 local function Meldung(oben, text)
-  if QK.Meldungen and QK.db.meldungen then QK.Meldungen:Zeigen(oben, text) else QK:Meldung("%s", text) end
+  if QK.Meldungen and QK.db.meldungen then QK.Meldungen:Zeigen(oben, text) end
 end
 
 ---------------------------------------------------------------------------
@@ -231,7 +232,7 @@ function U:Beute(text)
   local brauche = QK.Gegenstaende.brauche or {}
   if brauche[name:lower()] then return end
   local wofuer = Gebraucht(name)
-  if wofuer then
+  if wofuer and QK.db.haendlerHinweis then -- Chat-Hinweis wie beim Händler, ab Werk aus
     beuteGemeldet[name] = true
     QK:Meldung(L"%s gut aufheben: %s", name, wofuer)
   end
