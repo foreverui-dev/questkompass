@@ -1,5 +1,10 @@
 # Questkompass
 
+## 1.0.1
+
+- Leise ab Werk: keine Töne, Einblendungen in der Bildschirmmitte oder Fenster, die von selbst aufgehen. Alles lässt sich in den Einstellungen wieder einschalten, dort steht auch der Assistent (/qk einrichten). Bestehende Einstellungen werden dafür einmalig umgestellt.
+- Quiet by default: no sounds, pop-ups in the middle of the screen or windows that open on their own. Everything can be turned back on in the settings, where the setup assistant is too (/qk setup). Existing settings are switched over once.
+
 ## 1.0.0 – erste öffentliche Version
 
 20 neue Funktionen:

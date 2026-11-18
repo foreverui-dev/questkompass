@@ -239,7 +239,12 @@ local function Durchlauf(modern)
   end
 
   pruefe(QK.Compat.modern == modern, "richtige Quest-API erkannt")
-  pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent öffnet beim ersten Start")
+  pruefe(not (QuestkompassAssistent and QuestkompassAssistent.gezeigt), "Leise ab Werk: kein Fenster beim ersten Start")
+  pruefe(QK.db.leiseAbWerk == true and QK.db.meldungen == false and QK.db.klang == false, "Leise ab Werk: keine Töne und Einblendungen ab Werk")
+  QK.Assistent:Oeffnen(1)
+  pruefe(QuestkompassAssistent and QuestkompassAssistent.gezeigt, "Assistent lässt sich öffnen")
+  -- für die folgenden Prüfungen die Meldungen wieder einschalten (Werte vor „Leise ab Werk“)
+  for _, k in ipairs(QK.LEISE) do QK.db[k] = true end
   pruefe(enthaelt("Willkommen") and enthaelt("Los geht’s"), "Willkommensseite")
   for i = 1, 11 do
     alleTexte = {}
