@@ -745,9 +745,14 @@ function T:BlizzardTracker()
     if f then
       if not gehakt[name] then
         gehakt[name] = true
-        hooksecurefunc(f, "Show", function(self)
+        -- Das Spiel zeigt die Liste auf verschiedenen Wegen (Show, SetShown, über ihren Verwalter).
+        -- OnShow fängt alle ab.
+        local function weg(self)
           if QK.db.blizzardAusblenden and not InCombatLockdown() then self:Hide() end
-        end)
+        end
+        hooksecurefunc(f, "Show", weg)
+        if f.SetShown then hooksecurefunc(f, "SetShown", function(self, an) if an then weg(self) end end) end
+        if f.HookScript then f:HookScript("OnShow", weg) end
       end
       if QK.db.blizzardAusblenden then
         f:Hide()

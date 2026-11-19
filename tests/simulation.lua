@@ -988,6 +988,17 @@ local function Durchlauf(modern)
   pl.schreiben("interfaceAussehen", true)
   pl.aussehen({ an = false })
   pruefe(textur == QK.STANDARD_TEXTUR, "Interface aus: eigenes Aussehen")
+  -- Einbauen über die Einrichtung von ForeverUI
+  local lageVorher, breiteVorher = QK.db.lage, QK.db.breite
+  QK.db.blizzardAusblenden = false
+  pl.einbauen({ punkt = "TOPRIGHT", bezug = "TOPRIGHT", x = -20, y = -240, breite = 260 })
+  pruefe(pl.eingebaut() and QK.db.lage == "frei" and QK.db.pos[1] == "TOPRIGHT" and QK.db.breite == 260 and QK.db.blizzardAusblenden,
+    "ForeverUI baut die Liste rechts unter der Minikarte ein und blendet die des Spiels aus")
+  pl.ausbauen()
+  pruefe(not pl.eingebaut() and QK.db.lage == lageVorher and QK.db.breite == breiteVorher and QK.db.blizzardAusblenden == false,
+    "Ausbauen holt Lage, Breite und Einstellung zurück")
+  QK.db.blizzardAusblenden = true
+  QK:Anwenden()
 
   pruefe(QK.root.diagnose and QK.root.diagnose.interface == (modern and 16001 or 11507), "Diagnose gespeichert")
   pruefe(not QK.root.fehler or #QK.root.fehler == 0, "keine Fehler im Protokoll" .. ((QK.root.fehler and QK.root.fehler[1]) and (": " .. QK.root.fehler[1]) or ""))

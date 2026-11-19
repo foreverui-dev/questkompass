@@ -44,7 +44,42 @@ local plugin = {
     if id == "interfaceAussehen" then QK:InterfaceAussehen() end
   end,
   anwenden = function() QK:Anwenden() end,
+  -- Einrichtung von ForeverUI: Liste fest rechts unter der Minikarte, Liste des Spiels aus
+  einbauen = function(platz) QK:Einbauen(platz) end,
+  ausbauen = function() QK:Ausbauen() end,
+  eingebaut = function() local d = db(); return d and d.fuiEingebaut ~= nil end,
 }
+
+local function kopie(t)
+  if type(t) ~= "table" then return t end
+  local k = {}
+  for i, v in pairs(t) do k[i] = v end
+  return k
+end
+
+function QK:Einbauen(platz)
+  local d = self.db
+  if not d or type(platz) ~= "table" then return end
+  if not d.fuiEingebaut then
+    d.fuiEingebaut = { lage = d.lage, pos = kopie(d.pos), breite = d.breite, blizzardAusblenden = d.blizzardAusblenden }
+  end
+  local s = d.skalierung or 1
+  if s <= 0 then s = 1 end
+  d.lage = "frei"
+  d.pos = { platz.punkt or "TOPRIGHT", platz.bezug or "TOPRIGHT", (platz.x or 0) / s, (platz.y or 0) / s }
+  if platz.breite then d.breite = math.max(180, math.min(400, math.floor(platz.breite / s + 0.5))) end
+  d.blizzardAusblenden = true
+  self:Anwenden()
+end
+
+function QK:Ausbauen()
+  local d = self.db
+  if not d or not d.fuiEingebaut then return end
+  local alt = d.fuiEingebaut
+  d.lage, d.pos, d.breite, d.blizzardAusblenden = alt.lage, alt.pos, alt.breite, alt.blizzardAusblenden
+  d.fuiEingebaut = nil
+  self:Anwenden()
+end
 
 -- Aussehen des Interface übernehmen (nur wenn ForeverUI das Interface an hat und der Spieler es will)
 function QK:InterfaceAussehen(a)

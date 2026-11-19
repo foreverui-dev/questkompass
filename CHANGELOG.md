@@ -5,6 +5,8 @@
 - Neu: Plugin für ForeverUI. Ist ForeverUI installiert, erscheinen die wichtigsten Einstellungen dort unter „Plugins“ (Stil, Lage, Größe, Breite, Sortierung, Pfeile, Meldungen, Tooltips, Automatik). Questkompass läuft weiter genauso auch ohne ForeverUI.
 - Mit eingeschaltetem ForeverUI-Interface übernimmt Questkompass dessen Balkentextur und Akzentfarbe. Abschaltbar mit „Aussehen von ForeverUI übernehmen“.
 - Neues Design „Klar“ wie in ForeverUI: Schalter statt Häkchen und flache Knöpfe in den Einstellungen.
+- Die Einrichtung von ForeverUI kann die Liste fest rechts unter der Minikarte einbauen. Ein zweiter Klick holt den alten Platz zurück.
+- Die Questverfolgung des Spiels bleibt zuverlässiger ausgeblendet, auch wenn das Spiel sie auf anderen Wegen wieder zeigt.
 - Leise ab Werk: keine Töne, Chat-Meldungen, Einblendungen oder Fenster, die von selbst aufgehen. Alles lässt sich in den Einstellungen wieder einschalten, dort steht auch der Assistent. Bestehende Einstellungen werden dafür einmalig umgestellt.
 
 **English**
@@ -13,6 +15,8 @@
 - With the ForeverUI interface turned on, Questkompass takes on its bar texture and accent colour. Can be turned off with “Use ForeverUI's look”.
 - New “Clear” design as in ForeverUI: switches instead of checkboxes and flat buttons in the settings.
 - Quiet by default: no sounds, chat messages, pop-ups or windows that open on their own. Everything can be turned back on in the settings, where the setup assistant is too. Existing settings are switched over once.
+- ForeverUI's setup can build the list into the interface on the right below the minimap. A second click restores the old position.
+- The game's quest tracker stays hidden more reliably, even when the game shows it again in other ways.
 
 ## 1.1.0
 
